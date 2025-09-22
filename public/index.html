@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Farming Dashboard 🌱</title>
+  <meta name="description" content="Advanced Smart Farming Dashboard with Real-time Data">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loading-spinner"></div>
+    <p>Loading Smart Farming Dashboard...</p>
+  </div>
+
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <h1>🌱 Smart Farming Dashboard</h1>
+        <div class="location-info">
+          <span id="locationName">Loading...</span>
+          <span class="connection-status" id="connectionStatus">Connecting...</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="datetime-container">
+          <div id="currentDateTime" class="current-time">Loading...</div>
+          <div id="lastUpdate" class="last-update">Last updated: --</div>
+        </div>
+        <button id="refreshBtn" class="refresh-btn" title="Refresh Data">🔄</button>
+      </div>
+    </header>
+
+    <!-- Main layout -->
+    <div class="layout">
+      <!-- Sidebar Navigation -->
+      <nav class="sidebar" aria-label="Primary Navigation">
+        <div class="nav-section">
+          <h3>MONITORING</h3>
+          <button class="nav-btn active" data-target="dashboard">📊 Overview</button>
+          <button class="nav-btn" data-target="sensors">🔬 Live Sensors</button>
+          <button class="nav-btn" data-target="weather">🌤️ Weather</button>
+        </div>
+        
+        <div class="nav-section">
+          <h3>MANAGEMENT</h3>
+          <button class="nav-btn" data-target="irrigation">💧 Irrigation</button>
+          <button class="nav-btn" data-target="fertilizer">🧪 Fertilizer</button>
+          <button class="nav-btn" data-target="crop-health">🌿 Crop Health</button>
+        </div>
+        
+        <div class="nav-section">
+          <h3>ANALYTICS</h3>
+          <button class="nav-btn" data-target="reports">📈 Reports</button>
+          <button class="nav-btn" data-target="predictions">🔮 Predictions</button>
+        </div>
+      </nav>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        
+        <!-- Dashboard Overview -->
+        <section class="panel" id="dashboard">
+          <h2>📊 Farm Overview</h2>
+          
+          <div class="overview-cards">
+            <div class="overview-card">
+              <div class="card-icon">🌡️</div>
+              <div class="card-content">
+                <h3>TEMPERATURE</h3>
+                <div class="card-value" id="overviewTemp">--°C</div>
+                <div class="card-status" id="overviewTempStatus">Loading...</div>
+              </div>
+            </div>
+            
+            <div class="overview-card">
+              <div class="card-icon">💧</div>
+              <div class="card-content">
+                <h3>SOIL MOISTURE</h3>
+                <div class="card-value" id="overviewMoisture">--%</div>
+                <div class="card-status" id="overviewMoistureStatus">Loading...</div>
+              </div>
+            </div>
+            
+            <div class="overview-card">
+              <div class="card-icon">🌿</div>
+              <div class="card-content">
+                <h3>CROP HEALTH</h3>
+                <div class="card-value" id="overviewHealth">--%</div>
+                <div class="card-status" id="overviewHealthStatus">Loading...</div>
+              </div>
+            </div>
+            
+            <div class="overview-card">
+              <div class="card-icon">📈</div>
+              <div class="card-content">
+                <h3>PREDICTED YIELD</h3>
+                <div class="card-value" id="overviewYield">-- kg/ha</div>
+                <div class="card-status" id="overviewYieldStatus">Loading...</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quick-actions">
+            <h3>Quick Actions</h3>
+            <div class="action-buttons">
+              <button class="action-btn" id="quickIrrigateBtn">💧 Quick Irrigate</button>
+              <button class="action-btn" id="viewAlertsBtn">🚨 View Alerts</button>
+              <button class="action-btn" id="exportDataBtn">📥 Export Data</button>
+            </div>
+          </div>
+
+          <div id="alertsContainer" class="alerts-container"></div>
+        </section>
+
+        <!-- Live Sensor Data Section -->
+        <section class="panel hidden" id="sensors">
+          <h2>🔬 Live Sensor Data</h2>
+          
+          <div class="sensor-grid">
+            <div class="sensor-card">
+              <h3>🌡️ Temperature</h3>
+              <div class="sensor-value-container">
+                <div class="sensor-value" id="sensorTemp">--°C</div>
+                <div class="sensor-trend" id="sensorTempTrend">--</div>
+              </div>
+              <div class="chart-container">
+                <canvas id="temperatureChart" aria-label="Temperature Chart"></canvas>
+              </div>
+            </div>
+
+            <div class="sensor-card">
+              <h3>💧 Soil Moisture</h3>
+              <div class="sensor-value-container">
+                <div class="sensor-value" id="sensorMoisture">--%</div>
+                <div class="sensor-trend" id="sensorMoistureTrend">--</div>
+              </div>
+              <div class="chart-container">
+                <canvas id="soilMoistureChart" aria-label="Soil Moisture Chart"></canvas>
+              </div>
+            </div>
+
+            <div class="sensor-card">
+              <h3>💨 Humidity</h3>
+              <div class="sensor-value-container">
+                <div class="sensor-value" id="sensorHumidity">--%</div>
+                <div class="sensor-trend" id="sensorHumidityTrend">--</div>
+              </div>
+              <div class="chart-container">
+                <canvas id="humidityChart" aria-label="Humidity Chart"></canvas>
+              </div>
+            </div>
+
+            <div class="sensor-card">
+              <h3>🧪 Soil pH</h3>
+              <div class="sensor-value-container">
+                <div class="sensor-value" id="sensorPH">--</div>
+                <div class="sensor-trend" id="sensorPHTrend">--</div>
+              </div>
+              <div class="chart-container">
+                <canvas id="phChart" aria-label="pH Chart"></canvas>
+              </div>
+            </div>
+
+            <div class="sensor-card wide">
+              <h3>📊 Historical Trends</h3>
+              <div class="chart-container">
+                <canvas id="historicalChart" aria-label="Historical Data Chart"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Weather Section -->
+        <section class="panel hidden" id="weather">
+          <h2>🌤️ Weather Forecast</h2>
+          
+          <div class="weather-current">
+            <div class="current-weather-card">
+              <div class="weather-icon" id="currentWeatherIcon">🌤️</div>
+              <div class="weather-info">
+                <div class="current-temp" id="currentTemp">--°C</div>
+                <div class="weather-desc" id="weatherDesc">Loading...</div>
+                <div class="weather-details">
+                  <span>💨 <span id="windSpeed">--</span> m/s</span>
+                  <span>👁️ <span id="visibility">--</span> km</span>
+                  <span>☀️ UV <span id="uvIndex">--</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="weather-forecast">
+            <h3>7-Day Forecast</h3>
+            <div class="forecast-container" id="forecastContainer"></div>
+          </div>
+
+          <div class="weather-chart-container">
+            <canvas id="weatherChart" aria-label="Weather Forecast Chart"></canvas>
+          </div>
+        </section>
+
+        <!-- Irrigation Section -->
+        <section class="panel hidden" id="irrigation">
+          <h2>💧 Smart Irrigation Assistant</h2>
+          <div class="irrigation-status">
+            <div class="status-card">
+              <h3>Current Status</h3>
+              <div class="status-indicator">
+                <div class="indicator-dot"></div>
+                <span id="irrigationStatus">Analyzing...</span>
+              </div>
+              <div class="moisture-display">
+                <span>Soil Moisture: <strong id="irrigationSoilMoisture">--%</strong></span>
+              </div>
+            </div>
+          </div>
+          <div id="irrigationRecommendations" class="recommendations-container"></div>
+        </section>
+
+        <!-- Fertilizer Section -->
+        <section class="panel hidden" id="fertilizer">
+          <h2>🧪 Fertilizer & Nutrition Management</h2>
+          
+          <div class="nutrient-levels">
+            <h3>Current Nutrient Levels</h3>
+            <div class="nutrient-grid">
+              <div class="nutrient-card">
+                <h4>Nitrogen (N)</h4>
+                <div class="nutrient-bar">
+                  <div class="nutrient-fill nitrogen" id="nitrogenFill"></div>
+                </div>
+                <span id="nitrogenValue">--%</span>
+              </div>
+              <div class="nutrient-card">
+                <h4>Phosphorus (P)</h4>
+                <div class="nutrient-bar">
+                  <div class="nutrient-fill phosphorus" id="phosphorusFill"></div>
+                </div>
+                <span id="phosphorusValue">--%</span>
+              </div>
+              <div class="nutrient-card">
+                <h4>Potassium (K)</h4>
+                <div class="nutrient-bar">
+                  <div class="nutrient-fill potassium" id="potassiumFill"></div>
+                </div>
+                <span id="potassiumValue">--%</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="fertilizerRecommendations" class="recommendations-container"></div>
+        </section>
+
+        <!-- Crop Health Section -->
+        <section class="panel hidden" id="crop-health">
+          <h2>🌿 Crop Health Analysis</h2>
+          
+          <div class="health-overview">
+            <div class="health-score-card">
+              <h3>Overall Health Score</h3>
+              <div class="health-score-display">
+                <div class="score-circle">
+                  <canvas id="healthScoreChart" width="120" height="120"></canvas>
+                  <div class="score-text">
+                    <span id="healthScoreValue">--%</span>
+                  </div>
+                </div>
+              </div>
+              <div class="health-status" id="healthStatus">Analyzing...</div>
+            </div>
+            
+            <div class="growth-info">
+              <h3>Growth Information</h3>
+              <div class="growth-details">
+                <div class="growth-item">
+                  <span class="label">Current Stage:</span>
+                  <span id="growthStage">--</span>
+                </div>
+                <div class="growth-item">
+                  <span class="label">Days from Planting:</span>
+                  <span id="daysFromPlanting">--</span>
+                </div>
+                <div class="growth-item">
+                  <span class="label">Expected Harvest:</span>
+                  <span id="expectedHarvest">--</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="health-factors">
+            <h3>Contributing Factors</h3>
+            <div class="factors-grid" id="healthFactors"></div>
+          </div>
+        </section>
+
+        <!-- Reports Section -->
+        <section class="panel hidden" id="reports">
+          <h2>📈 Analytics & Reports</h2>
+          
+          <div class="reports-grid">
+            <div class="report-card">
+              <h3>📊 Yield Progress</h3>
+              <canvas id="yieldChart" aria-label="Yield Progress Chart"></canvas>
+            </div>
+            
+            <div class="report-card">
+              <h3>💰 Cost Savings</h3>
+              <canvas id="costSavingsChart" aria-label="Cost Savings Chart"></canvas>
+            </div>
+            
+            <div class="report-card">
+              <h3>💧 Water Usage</h3>
+              <canvas id="waterUsageChart" aria-label="Water Usage Chart"></canvas>
+            </div>
+            
+            <div class="report-card">
+              <h3>📈 Performance Metrics</h3>
+              <div class="metrics-list">
+                <div class="metric-item">
+                  <span class="metric-label">Average Soil Moisture:</span>
+                  <span class="metric-value" id="avgMoisture">--%</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">Irrigation Efficiency:</span>
+                  <span class="metric-value" id="irrigationEfficiency">--%</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">Nutrient Balance:</span>
+                  <span class="metric-value" id="nutrientBalance">--</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Predictions Section -->
+        <section class="panel hidden" id="predictions">
+          <h2>🔮 AI Predictions & Insights</h2>
+          
+          <div class="predictions-grid">
+            <div class="prediction-card">
+              <h3>📈 Yield Prediction</h3>
+              <div class="prediction-content">
+                <div class="prediction-value" id="yieldPredictionValue">-- kg/ha</div>
+                <div class="prediction-confidence">
+                  Confidence: <span id="yieldConfidence">--%</span>
+                </div>
+                <div class="prediction-details" id="yieldFactors"></div>
+              </div>
+            </div>
+            
+            <div class="prediction-card">
+              <h3>🌧️ Weather Impact</h3>
+              <div class="weather-impact" id="weatherImpact"></div>
+            </div>
+            
+            <div class="prediction-card">
+              <h3>💡 AI Recommendations</h3>
+              <div class="ai-recommendations" id="aiRecommendations"></div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-left">
+          <span>Smart Farming Dashboard v1.0</span>
+        </div>
+        <div class="footer-right">
+          <a href="#" id="helpBtn">Help</a> | 
+          <a href="#" id="settingsBtn">Settings</a> | 
+          <a href="#" id="aboutBtn">About</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Load Socket.IO -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- Load Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+  <!-- COMPLETE DASHBOARD SCRIPT -->
+  <script>
+    console.log('🚀 Starting Complete Smart Farming Dashboard...');
+
+    // Auto-hide loading screen
+    setTimeout(() => {
+      const loadingScreen = document.getElementById('loadingScreen');
+      if (loadingScreen && loadingScreen.style.display !== 'none') {
+        loadingScreen.style.display = 'none';
+      }
+    }, 2000);
+
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('📄 DOM loaded, initializing complete dashboard...');
+      
+      // Hide loading screen immediately
+      document.getElementById('loadingScreen').style.display = 'none';
+      
+      // Update time
+      function updateTime() {
+        document.getElementById('currentDateTime').textContent = new Date().toLocaleString('en-IN', {
+          timeZone: 'Asia/Kolkata',
+          dateStyle: 'medium',
+          timeStyle: 'short'
+        });
+        document.getElementById('lastUpdate').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+      }
+      updateTime();
+      setInterval(updateTime, 60000);
+
+      // Setup navigation
+      function setupNavigation() {
+        const navButtons = document.querySelectorAll('.nav-btn');
+        const sections = document.querySelectorAll('.panel');
+
+        navButtons.forEach(btn => {
+          btn.addEventListener('click', function() {
+            const target = this.getAttribute('data-target');
+            console.log('🔘 Navigation:', target);
+            
+            navButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            sections.forEach(section => {
+              if (section.id === target) {
+                section.classList.remove('hidden');
+              } else {
+                section.classList.add('hidden');
+              }
+            });
+          });
+        });
+      }
+      setupNavigation();
+
+      // Setup action buttons
+      document.getElementById('quickIrrigateBtn').onclick = () => alert('💧 Irrigation system activated!');
+      document.getElementById('viewAlertsBtn').onclick = () => document.querySelector('[data-target="dashboard"]').click();
+      document.getElementById('exportDataBtn').onclick = () => alert('📥 Exporting dashboard data...');
+      document.getElementById('refreshBtn').onclick = () => location.reload();
+
+      // Load real data function
+      function loadCompleteData() {
+        console.log('📡 Loading complete dashboard data...');
+        
+        fetch('/api/current-data')
+          .then(response => response.json())
+          .then(data => {
+            console.log('✅ Complete data received:', data);
+            populateCompleteDashboard(data);
+          })
+          .catch(error => {
+            console.log('⚠️ API failed, loading complete demo data');
+            loadCompleteDemoData();
+          });
+      }
+
+      function populateCompleteDashboard(data) {
+        // Overview Cards
+        if (data.weather) {
+          document.getElementById('overviewTemp').textContent = `${Math.round(data.weather.temperature)}°C`;
+          document.getElementById('overviewTempStatus').textContent = 
+            data.weather.temperature > 30 ? 'Hot' : 
+            data.weather.temperature < 15 ? 'Cold' : 'Optimal';
+        }
+        
+        if (data.soil) {
+          document.getElementById('overviewMoisture').textContent = `${data.soil.moisture.toFixed(1)}%`;
+          document.getElementById('overviewMoistureStatus').textContent = 
+            data.soil.moisture < 30 ? 'Low' : data.soil.moisture > 70 ? 'High' : 'Good';
+        }
+        
+        if (data.cropHealth) {
+          document.getElementById('overviewHealth').textContent = `${Math.round(data.cropHealth.score)}%`;
+          document.getElementById('overviewHealthStatus').textContent = 
+            data.cropHealth.score >= 80 ? 'Excellent' : data.cropHealth.score >= 60 ? 'Good' : 'Fair';
+        }
+        
+        if (data.yieldPrediction) {
+          document.getElementById('overviewYield').textContent = `${data.yieldPrediction.perHectare} kg/ha`;
+          document.getElementById('overviewYieldStatus').textContent = `${data.yieldPrediction.confidence}% confidence`;
+        }
+
+        // Location and Status
+        if (data.location) {
+          document.getElementById('locationName').textContent = data.location.city;
+        }
+        document.getElementById('connectionStatus').textContent = 'Connected';
+        document.getElementById('connectionStatus').className = 'connection-status connected';
+
+        // Populate ALL Sections
+        populateAllSectionsComplete(data);
+      }
+
+      function populateAllSectionsComplete(data) {
+        // Sensors Section
+        if (data.weather && data.soil) {
+          document.getElementById('sensorTemp').textContent = `${Math.round(data.weather.temperature)}°C`;
+          document.getElementById('sensorMoisture').textContent = `${data.soil.moisture.toFixed(1)}%`;
+          document.getElementById('sensorHumidity').textContent = `${data.weather.humidity}%`;
+          document.getElementById('sensorPH').textContent = data.soil.ph.toFixed(2);
+          
+          // Trends
+          document.getElementById('sensorTempTrend').textContent = '+2.1';
+          document.getElementById('sensorTempTrend').className = 'sensor-trend up';
+          document.getElementById('sensorMoistureTrend').textContent = 'Stable';
+          document.getElementById('sensorMoistureTrend').className = 'sensor-trend stable';
+          document.getElementById('sensorHumidityTrend').textContent = '+5';
+          document.getElementById('sensorHumidityTrend').className = 'sensor-trend up';
+          document.getElementById('sensorPHTrend').textContent = 'Stable';
+          document.getElementById('sensorPHTrend').className = 'sensor-trend stable';
+        }
+
+        // Weather Section
+        if (data.weather) {
+          document.getElementById('currentTemp').textContent = `${Math.round(data.weather.temperature)}°C`;
+          document.getElementById('weatherDesc').textContent = data.weather.description;
+          document.getElementById('windSpeed').textContent = data.weather.windSpeed.toFixed(1);
+          document.getElementById('visibility').textContent = data.weather.visibility.toFixed(1);
+          document.getElementById('uvIndex').textContent = data.weather.uvIndex;
+          document.getElementById('currentWeatherIcon').textContent = getWeatherIcon(data.weather.description);
+          
+          // 7-Day Forecast
+          populateWeatherForecast(data);
+        }
+
+        // Irrigation Section
+        if (data.soil) {
+          document.getElementById('irrigationSoilMoisture').textContent = `${data.soil.moisture.toFixed(1)}%`;
+          document.getElementById('irrigationStatus').textContent = 
+            data.soil.moisture < 25 ? 'Irrigation Required' : 
+            data.soil.moisture < 40 ? 'Monitor Closely' : 'Optimal Level';
+          
+          // Irrigation recommendations
+          document.getElementById('irrigationRecommendations').innerHTML = `
+            <div class="recommendation-card priority-medium">
+              <div class="rec-type">IRRIGATION</div>
+              <div class="rec-message">Soil moisture at ${data.soil.moisture.toFixed(1)}% - within acceptable range</div>
+              <div class="rec-action">Next irrigation recommended in 2-3 days based on weather forecast</div>
+            </div>
+          `;
+        }
+
+        // Fertilizer Section
+        if (data.soil) {
+          ['nitrogen', 'phosphorus', 'potassium'].forEach(nutrient => {
+            const value = data.soil[nutrient] || (Math.random() * 40 + 40);
+            const fill = document.getElementById(`${nutrient}Fill`);
+            const valueEl = document.getElementById(`${nutrient}Value`);
+            if (fill) fill.style.width = `${value}%`;
+            if (valueEl) valueEl.textContent = `${Math.round(value)}%`;
+          });
+          
+          document.getElementById('fertilizerRecommendations').innerHTML = `
+            <div class="recommendation-card priority-low">
+              <div class="rec-type">NUTRIENT STATUS</div>
+              <div class="rec-message">Current nutrient levels are balanced</div>
+              <div class="rec-action">Continue regular fertilization schedule</div>
+            </div>
+          `;
+        }
+
+        // Crop Health Section
+        if (data.cropHealth) {
+          document.getElementById('healthScoreValue').textContent = `${Math.round(data.cropHealth.score)}%`;
+          document.getElementById('healthStatus').textContent = 
+            data.cropHealth.score >= 80 ? 'Excellent' : data.cropHealth.score >= 60 ? 'Good' : 'Fair';
+          document.getElementById('growthStage').textContent = data.cropHealth.growthStage || 'Vegetative Growth';
+          document.getElementById('daysFromPlanting').textContent = `${data.cropHealth.daysFromPlanting || 45} days`;
+          document.getElementById('expectedHarvest').textContent = `${data.cropHealth.expectedHarvest || 75} days`;
+          
+          // Health factors
+          document.getElementById('healthFactors').innerHTML = `
+            <div class="factor-card optimal">
+              <h4>Temperature</h4>
+              <div class="factor-value">${Math.round(data.weather.temperature)}°C</div>
+              <div class="factor-status">optimal</div>
+            </div>
+            <div class="factor-card optimal">
+              <h4>Soil Moisture</h4>
+              <div class="factor-value">${data.soil.moisture.toFixed(1)}%</div>
+              <div class="factor-status">good</div>
+            </div>
+            <div class="factor-card optimal">
+              <h4>pH Level</h4>
+              <div class="factor-value">${data.soil.ph.toFixed(1)}</div>
+              <div class="factor-status">optimal</div>
+            </div>
+            <div class="factor-card warning">
+              <h4>Humidity</h4>
+              <div class="factor-value">${data.weather.humidity}%</div>
+              <div class="factor-status">moderate</div>
+            </div>
+          `;
+        }
+
+        // Reports Section
+        document.getElementById('avgMoisture').textContent = `${data.soil?.moisture.toFixed(1) || '42.3'}%`;
+        document.getElementById('irrigationEfficiency').textContent = '92%';
+        document.getElementById('nutrientBalance').textContent = 'Excellent';
+
+        // Predictions Section
+        if (data.yieldPrediction) {
+          document.getElementById('yieldPredictionValue').textContent = `${data.yieldPrediction.perHectare} kg/ha`;
+          document.getElementById('yieldConfidence').textContent = `${data.yieldPrediction.confidence}%`;
+          
+          // Yield factors
+          document.getElementById('yieldFactors').innerHTML = Object.entries(data.yieldPrediction.factors)
+            .map(([key, value]) => `
+              <div class="factor-item">
+                <span>${key.charAt(0).toUpperCase() + key.slice(1)}:</span>
+                <span>${value}%</span>
+              </div>
+            `).join('');
+        }
+
+        // Weather Impact
+        document.getElementById('weatherImpact').innerHTML = `
+          <div class="impact-summary">
+            <h4>Overall Impact: ${data.weather.temperature > 30 ? 'Challenging' : 'Positive'}</h4>
+            <p>Current weather conditions in ${data.location?.city || 'your area'} ${data.weather.temperature > 30 ? 'require careful monitoring due to high temperatures' : 'are favorable for crop growth'}.</p>
+          </div>
+          <div class="impact-factors">
+            <div class="impact-factor">
+              <span class="factor-name">Temperature (${Math.round(data.weather.temperature)}°C):</span>
+              <span class="factor-impact ${data.weather.temperature > 30 ? 'negative' : 'positive'}">${data.weather.temperature > 30 ? 'High' : 'Good'}</span>
+            </div>
+            <div class="impact-factor">
+              <span class="factor-name">Humidity (${data.weather.humidity}%):</span>
+              <span class="factor-impact neutral">Moderate</span>
+            </div>
+            <div class="impact-factor">
+              <span class="factor-name">Soil Moisture:</span>
+              <span class="factor-impact positive">Good</span>
+            </div>
+          </div>
+        `;
+
+        // AI Recommendations
+        let recommendations = [];
+        
+        if (data.weather?.temperature > 30) {
+          recommendations.push({
+            icon: '🌡️',
+            title: 'Heat Stress Management',
+            description: `Temperature at ${Math.round(data.weather.temperature)}°C is high. Consider shade nets or increased irrigation frequency during peak hours.`,
+            priority: 'High'
+          });
+        }
+        
+        if (data.cropHealth?.score > 80) {
+          recommendations.push({
+            icon: '🤖',
+            title: 'Maintain Excellence',
+            description: `Crop health is excellent at ${Math.round(data.cropHealth.score)}%. Continue current management practices.`,
+            priority: 'Low'
+          });
+        }
+        
+        if (data.soil?.moisture < 40) {
+          recommendations.push({
+            icon: '💧',
+            title: 'Smart Irrigation',
+            description: `Soil moisture at ${data.soil.moisture.toFixed(1)}%. Monitor closely and irrigate within 24-48 hours.`,
+            priority: 'Medium'
+          });
+        }
+        
+        recommendations.push({
+          icon: '📈',
+          title: 'Yield Optimization',
+          description: `Based on current conditions, predicted yield is ${data.yieldPrediction?.perHectare || 4200} kg/ha.`,
+          priority: 'Low'
+        });
+
+        document.getElementById('aiRecommendations').innerHTML = recommendations.map(rec => `
+          <div class="ai-recommendation">
+            <div class="ai-rec-header">
+              <span class="ai-rec-icon">${rec.icon}</span>
+              <strong>${rec.title}</strong>
+            </div>
+            <p>${rec.description}</p>
+            <div class="ai-rec-priority">Priority: ${rec.priority}</div>
+          </div>
+        `).join('');
+
+        // Initialize Charts
+        setTimeout(() => {
+          initializeAllCharts(data);
+        }, 1000);
+      }
+
+      function populateWeatherForecast(data) {
+        // Get real forecast or use fallback
+        fetch('/api/forecast')
+          .then(response => response.json())
+          .then(forecastData => {
+            const forecast = forecastData.forecast || generateFallbackForecast();
+            document.getElementById('forecastContainer').innerHTML = forecast.slice(0, 7).map(day => `
+              <div class="forecast-card">
+                <div class="forecast-day">${day.date}</div>
+                <div class="forecast-icon">${getWeatherIcon(day.description)}</div>
+                <div class="forecast-temp">${day.temperature.max}°/${day.temperature.min}°</div>
+                <div class="forecast-rain">${day.rainfall}mm</div>
+              </div>
+            `).join('');
+          })
+          .catch(() => {
+            const forecast = generateFallbackForecast();
+            document.getElementById('forecastContainer').innerHTML = forecast.map(day => `
+              <div class="forecast-card">
+                <div class="forecast-day">${day.date}</div>
+                <div class="forecast-icon">${day.icon}</div>
+                <div class="forecast-temp">${day.temp}</div>
+                <div class="forecast-rain">${day.rain}</div>
+              </div>
+            `).join('');
+          });
+      }
+
+      function generateFallbackForecast() {
+        return [
+          { date: 'Mon', icon: '☀️', temp: '32°/24°', rain: '0mm' },
+          { date: 'Tue', icon: '🌤️', temp: '29°/22°', rain: '2mm' },
+          { date: 'Wed', icon: '⛅', temp: '28°/21°', rain: '5mm' },
+          { date: 'Thu', icon: '🌦️', temp: '26°/20°', rain: '8mm' },
+          { date: 'Fri', icon: '☀️', temp: '30°/23°', rain: '0mm' },
+          { date: 'Sat', icon: '🌤️', temp: '31°/24°', rain: '1mm' },
+          { date: 'Sun', icon: '☀️', temp: '33°/25°', rain: '0mm' }
+        ];
+      }
+
+      function getWeatherIcon(description) {
+        const icons = {
+          'clear sky': '☀️', 'few clouds': '🌤️', 'scattered clouds': '⛅',
+          'broken clouds': '☁️', 'overcast clouds': '☁️', 'light rain': '🌦️',
+          'moderate rain': '🌧️', 'heavy rain': '⛈️', 'thunderstorm': '⛈️',
+          'snow': '❄️', 'mist': '🌫️', 'haze': '🌫️', 'partly cloudy': '⛅'
+        };
+        return icons[description] || '🌤️';
+      }
+
+      function initializeAllCharts(data) {
+  if (typeof Chart === 'undefined') {
+    console.log('Charts not available');
+    return;
+  }
+
+  console.log('📊 Initializing all charts with proper sizing...');
+
+  // Yield Progress Chart
+  const yieldCtx = document.getElementById('yieldChart');
+  if (yieldCtx) {
+    new Chart(yieldCtx.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+        datasets: [{
+          label: 'Growth Progress (%)',
+          data: [15, 28, 42, 56, 68, 75],
+          borderColor: '#2a9d8f',
+          backgroundColor: 'rgba(42,157,143,0.1)',
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false, // This is key for proper sizing
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: { 
+          y: { 
+            min: 0, 
+            max: 100,
+            grid: {
+              display: true
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Cost Savings Chart - Smaller, more controlled
+  const costCtx = document.getElementById('costSavingsChart');
+  if (costCtx) {
+    new Chart(costCtx.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Water', 'Fertilizer', 'Labor', 'Energy'],
+        datasets: [{
+          data: [35, 28, 45, 22],
+          backgroundColor: ['#2a9d8f', '#e9c46a', '#f4a261', '#e76f51'],
+          borderWidth: 0,
+          cutout: '60%'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              boxWidth: 12,
+              font: {
+                size: 11
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Water Usage Chart - Bar chart with controlled height
+  const waterCtx = document.getElementById('waterUsageChart');
+  if (waterCtx) {
+    new Chart(waterCtx.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [{
+          label: 'Water Usage (L)',
+          data: [1200, 1150, 1300, 1100, 1000, 950],
+          backgroundColor: '#2196F3',
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              display: true
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            }
+          }
+        }
+      }
+    });
+  }
+
+  console.log('✅ All charts initialized with proper sizing');
+}
+
+
+      function loadCompleteDemoData() {
+        const demoData = {
+          weather: {
+            temperature: 31.1,
+            humidity: 65,
+            pressure: 1013,
+            windSpeed: 3.6,
+            visibility: 4.5,
+            uvIndex: 1,
+            description: 'haze'
+          },
+          soil: {
+            moisture: 33.2,
+            ph: 6.8,
+            nitrogen: 68,
+            phosphorus: 45,
+            potassium: 72
+          },
+          cropHealth: {
+            score: 100,
+            growthStage: 'Vegetative Growth',
+            daysFromPlanting: 45,
+            expectedHarvest: 75,
+            factors: {}
+          },
+          yieldPrediction: {
+            perHectare: 5175,
+            confidence: 100,
+            factors: { health: 100, weather: 85, soil: 95 }
+          },
+          location: { city: 'Delhi' }
+        };
+        
+        populateCompleteDashboard(demoData);
+      }
+
+      // Load data immediately
+      loadCompleteData();
+      
+      // Refresh every 2 minutes
+      setInterval(loadCompleteData, 120000);
+      
+      console.log('✅ Complete Smart Farming Dashboard loaded successfully!');
+    });
+  </script>
+</body>
+</html>
