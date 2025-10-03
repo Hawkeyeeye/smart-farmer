@@ -1,4 +1,4 @@
-// Smart Farming Dashboard - Complete Working Version
+// Smart Farming Dashboard - Complete Working Version with Subscription Features
 class SmartFarmingDashboard {
   constructor() {
     this.socket = null;
@@ -17,8 +17,17 @@ class SmartFarmingDashboard {
     this.chartsAvailable = window.CHARTS_AVAILABLE || false;
     this.socketAvailable = window.IO_AVAILABLE || false;
     
+    // SUBSCRIPTION FEATURES ADDED
+    this.currentPlan = 'free'; // 'free', 'pro', 'premium'
+    this.planFeatures = {
+      free: ['dashboard-basic', 'sensors-basic', 'weather', 'irrigation-basic', 'fertilizer-basic'],
+      pro: ['dashboard-basic', 'dashboard-health', 'sensors-basic', 'sensors-advanced', 'weather', 'irrigation-basic', 'fertilizer-basic', 'crop-health', 'export-csv'],
+      premium: ['dashboard-basic', 'dashboard-health', 'dashboard-yield', 'sensors-basic', 'sensors-advanced', 'weather', 'irrigation-basic', 'fertilizer-basic', 'crop-health', 'reports', 'predictions', 'export-all', 'multi-farm', 'api-access']
+    };
+    
     console.log('📊 Charts available:', this.chartsAvailable);
     console.log('🔌 Socket.IO available:', this.socketAvailable);
+    console.log('💎 Current subscription plan:', this.currentPlan);
     
     this.init();
   }
@@ -29,6 +38,10 @@ class SmartFarmingDashboard {
       
       // Show loading screen
       this.showLoading(true);
+      
+      // Initialize subscription features
+      this.updateSubscriptionBadge();
+      this.updateFeatureAccess();
       
       // Check if we're running through server or file://
       this.checkRunningMode();
@@ -76,6 +89,211 @@ class SmartFarmingDashboard {
     }
   }
 
+  // SUBSCRIPTION MANAGEMENT METHODS
+  updateSubscriptionBadge() {
+    const badge = document.getElementById('subscriptionBadge');
+    if (!badge) return;
+    
+    switch(this.currentPlan) {
+      case 'free':
+        badge.textContent = 'FREE PLAN';
+        badge.className = 'subscription-badge free';
+        break;
+      case 'pro':
+        badge.textContent = 'PRO PLAN';
+        badge.className = 'subscription-badge pro';
+        break;
+      case 'premium':
+        badge.textContent = 'PREMIUM PLAN';
+        badge.className = 'subscription-badge premium';
+        break;
+    }
+  }
+
+  hasAccess(feature) {
+    return this.planFeatures[this.currentPlan].includes(feature);
+  }
+
+  updateFeatureAccess() {
+    // Update plan cards
+    document.querySelectorAll('.pricing-card').forEach(card => {
+      card.classList.remove('current');
+      const button = card.querySelector('.plan-btn');
+      if (button) {
+        button.disabled = false;
+        button.textContent = card.id === 'freePlanCard' ? 'Downgrade to Free' : 
+                           card.id === 'proPlanCard' ? 'Upgrade to Pro' : 'Upgrade to Premium';
+      }
+    });
+
+    const currentCard = document.getElementById(`${this.currentPlan}PlanCard`);
+    if (currentCard) {
+      currentCard.classList.add('current');
+      const button = currentCard.querySelector('.plan-btn');
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Current Plan';
+      }
+    }
+
+    // Show/hide premium overlays
+    document.querySelectorAll('.premium-feature').forEach(feature => {
+      const overlay = feature.querySelector('.premium-overlay');
+      if (overlay) {
+        if (feature.classList.contains('sensors-advanced') && !this.hasAccess('sensors-advanced')) {
+          overlay.style.display = 'flex';
+        } else if (feature.classList.contains('dashboard-health') && !this.hasAccess('dashboard-health')) {
+          overlay.style.display = 'flex';
+        } else if (feature.classList.contains('dashboard-yield') && !this.hasAccess('dashboard-yield')) {
+          overlay.style.display = 'flex';
+        } else {
+          overlay.style.display = 'none';
+        }
+      }
+    });
+
+    // Update navigation buttons
+    document.querySelectorAll('.nav-btn.premium-required').forEach(btn => {
+      const target = btn.getAttribute('data-target');
+      if (target === 'crop-health' && !this.hasAccess('crop-health')) {
+        btn.style.opacity = '0.6';
+        btn.style.pointerEvents = 'none';
+      } else if ((target === 'reports' || target === 'predictions') && !this.hasAccess('reports')) {
+        btn.style.opacity = '0.6';
+        btn.style.pointerEvents = 'none';
+      } else {
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+      }
+    });
+  }
+
+  showUpgradeModal(suggestedPlan = 'pro') {
+    const modal = document.getElementById('upgradeModal');
+    const modalContent = document.getElementById('modalContent');
+    
+    if (!modal || !modalContent) return;
+    
+    modalContent.innerHTML = `
+      <div class="upgrade-modal-content">
+        <h2>🚀 Upgrade Your Plan</h2>
+        <p>Unlock powerful features to maximize your farming potential!</p>
+        
+        <div class="modal-plans">
+          <div class="modal-plan ${suggestedPlan === 'pro' ? 'recommended' : ''}">
+            <div class="modal-plan-header">
+              <h3>Pro Plan</h3>
+              ${suggestedPlan === 'pro' ? '<div class="recommended-badge">Recommended</div>' : ''}
+            </div>
+            <div class="modal-plan-price">₹299/month</div>
+            <ul class="modal-plan-features">
+              <li>✓ Advanced sensors (pH, Humidity)</li>
+              <li>✓ Crop health analysis</li>
+              <li>✓ 30-day historical data</li>
+              <li>✓ Email/SMS alerts</li>
+            </ul>
+            <button class="modal-plan-btn" onclick="window.dashboard.subscribeToPlan('pro')">Choose Pro</button>
+          </div>
+          
+          <div class="modal-plan ${suggestedPlan === 'premium' ? 'recommended' : ''}">
+            <div class="modal-plan-header">
+              <h3>Premium Plan</h3>
+              ${suggestedPlan === 'premium' ? '<div class="recommended-badge">Recommended</div>' : ''}
+            </div>
+            <div class="modal-plan-price">₹599/month</div>
+            <ul class="modal-plan-features">
+              <li>✓ Everything in Pro</li>
+              <li>✓ AI yield predictions</li>
+              <li>✓ Advanced analytics</li>
+              <li>✓ Multi-farm management</li>
+            </ul>
+            <button class="modal-plan-btn premium" onclick="window.dashboard.subscribeToPlan('premium')">Choose Premium</button>
+          </div>
+        </div>
+        
+        <div class="modal-benefits">
+          <h4>💡 What you'll get:</h4>
+          <div class="modal-benefit-items">
+            <div class="modal-benefit">📈 Increase yield by up to 25%</div>
+            <div class="modal-benefit">💰 Reduce costs by up to 30%</div>
+            <div class="modal-benefit">🤖 AI-powered recommendations</div>
+            <div class="modal-benefit">📱 Real-time alerts and notifications</div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    modal.style.display = 'block';
+  }
+
+  closeUpgradeModal() {
+    const modal = document.getElementById('upgradeModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  checkPremiumFeature(feature) {
+    if (feature === 'export' && !this.hasAccess('export-csv')) {
+      this.showUpgradeModal('pro');
+      return false;
+    }
+    if (feature === 'crop-health' && !this.hasAccess('crop-health')) {
+      this.showUpgradeModal('pro');
+      return false;
+    }
+    if ((feature === 'reports' || feature === 'predictions') && !this.hasAccess('reports')) {
+      this.showUpgradeModal('premium');
+      return false;
+    }
+    return true;
+  }
+
+  subscribeToPlan(plan) {
+    // Show loading state
+    const buttons = document.querySelectorAll('.modal-plan-btn, .plan-btn');
+    buttons.forEach(button => {
+      if (button.textContent.toLowerCase().includes(plan.toLowerCase())) {
+        const originalText = button.textContent;
+        button.textContent = 'Processing...';
+        button.disabled = true;
+        
+        // Simulate payment process (replace with real payment gateway)
+        setTimeout(() => {
+          // Simulate successful payment
+          this.currentPlan = plan;
+          this.updateSubscriptionBadge();
+          this.updateFeatureAccess();
+          this.closeUpgradeModal();
+          
+          // Show success message
+          this.showSubscriptionSuccess(plan);
+          
+          // Restore button
+          button.textContent = originalText;
+          button.disabled = false;
+        }, 2000);
+      }
+    });
+  }
+
+  showSubscriptionSuccess(plan) {
+    const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
+    const alert = document.createElement('div');
+    alert.className = 'success-alert';
+    alert.innerHTML = `
+      <div class="success-content">
+        <span class="success-icon">🎉</span>
+        <span>Successfully upgraded to ${planName} plan!</span>
+        <button onclick="this.parentElement.parentElement.remove()">×</button>
+      </div>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+      if (alert.parentElement) alert.remove();
+    }, 5000);
+  }
+
+  // ALL YOUR EXISTING METHODS FROM ORIGINAL FILE
   checkRunningMode() {
     this.isServerMode = window.location.protocol === 'http:' || window.location.protocol === 'https:';
     
@@ -280,18 +498,25 @@ class SmartFarmingDashboard {
     
     this.data.current = data;
     
-    // Update all sections
+    // Update all sections with subscription checks
     this.updateOverviewCards(data);
     this.updateSensorData(data);
     this.updateWeatherData(data);
     this.updateIrrigationData(data);
     this.updateFertilizerData(data);
-    this.updateCropHealthData(data);
-    this.updateReportsData(data);
-    this.updatePredictionsData(data);
+    
+    // Premium features with access control
+    if (this.hasAccess('crop-health')) {
+      this.updateCropHealthData(data);
+    }
+    if (this.hasAccess('reports')) {
+      this.updateReportsData(data);
+    }
+    if (this.hasAccess('predictions')) {
+      this.updatePredictionsData(data);
+    }
     
     this.populateAllSectionDetails(data);
-    // Update last updated time
     this.updateLastUpdateTime();
     
     console.log('✅ Dashboard updated successfully');
@@ -323,18 +548,18 @@ class SmartFarmingDashboard {
       if (moistureStatus) moistureStatus.textContent = this.getMoistureStatus(data.soil.moisture);
     }
 
-    // Crop Health
+    // Crop Health (Premium Feature Check)
     const healthElement = document.getElementById('overviewHealth');
     const healthStatus = document.getElementById('overviewHealthStatus');
-    if (healthElement) {
+    if (healthElement && this.hasAccess('dashboard-health')) {
       healthElement.textContent = `${Math.round(data.cropHealth.score)}%`;
       if (healthStatus) healthStatus.textContent = this.getHealthStatus(data.cropHealth.score);
     }
 
-    // Predicted Yield
+    // Predicted Yield (Premium Feature Check)
     const yieldElement = document.getElementById('overviewYield');
     const yieldStatus = document.getElementById('overviewYieldStatus');
-    if (yieldElement && data.yieldPrediction) {
+    if (yieldElement && data.yieldPrediction && this.hasAccess('dashboard-yield')) {
       yieldElement.textContent = `${data.yieldPrediction.perHectare} kg/ha`;
       if (yieldStatus) yieldStatus.textContent = `${data.yieldPrediction.confidence}% confidence`;
     }
@@ -346,17 +571,25 @@ class SmartFarmingDashboard {
   updateSensorData(data) {
     if (!data.weather || !data.soil) return;
 
-    // Update sensor values
-    this.updateElement('sensorTemp', `${Math.round(data.weather.temperature)}°C`);
-    this.updateElement('sensorMoisture', `${data.soil.moisture.toFixed(1)}%`);
-    this.updateElement('sensorHumidity', `${data.weather.humidity}%`);
-    this.updateElement('sensorPH', data.soil.ph.toFixed(2));
+    // Update sensor values with subscription checks
+    if (this.hasAccess('sensors-basic')) {
+      this.updateElement('sensorTemp', `${Math.round(data.weather.temperature)}°C`);
+      this.updateElement('sensorMoisture', `${data.soil.moisture.toFixed(1)}%`);
+    }
+    
+    if (this.hasAccess('sensors-advanced')) {
+      this.updateElement('sensorHumidity', `${data.weather.humidity}%`);
+      this.updateElement('sensorPH', data.soil.ph.toFixed(2));
+    }
 
     // Update trends
     this.updateTrend('sensorTempTrend', data.weather.temperature, 25);
     this.updateTrend('sensorMoistureTrend', data.soil.moisture, 40);
-    this.updateTrend('sensorHumidityTrend', data.weather.humidity, 60);
-    this.updateTrend('sensorPHTrend', data.soil.ph, 6.5);
+    
+    if (this.hasAccess('sensors-advanced')) {
+      this.updateTrend('sensorHumidityTrend', data.weather.humidity, 60);
+      this.updateTrend('sensorPHTrend', data.soil.ph, 6.5);
+    }
 
     // Update charts if available
     if (this.chartsAvailable) {
@@ -415,8 +648,6 @@ class SmartFarmingDashboard {
     }
   }
 
-  // ... (continuing from updateForecast method)
-
   updateForecast(forecast) {
     const container = document.getElementById('forecastContainer');
     if (!container) return;
@@ -455,95 +686,6 @@ class SmartFarmingDashboard {
     // Update recommendations
     this.updateRecommendations(data.cropHealth.recommendations, 'irrigationRecommendations');
   }
-  populateAllSectionDetails(data) {
-  // Populate Sensors Section Details
-  if (data.weather && data.soil) {
-    this.updateElement('sensorTemp', `${Math.round(data.weather.temperature)}°C`);
-    this.updateElement('sensorMoisture', `${data.soil.moisture.toFixed(1)}%`);
-    this.updateElement('sensorHumidity', `${data.weather.humidity}%`);
-    this.updateElement('sensorPH', data.soil.ph.toFixed(2));
-    
-    // Update trends
-    this.updateTrend('sensorTempTrend', data.weather.temperature, 25);
-    this.updateTrend('sensorMoistureTrend', data.soil.moisture, 40);
-    this.updateTrend('sensorHumidityTrend', data.weather.humidity, 60);
-    this.updateTrend('sensorPHTrend', data.soil.ph, 6.5);
-  }
-  
-  // Populate Weather Section Details
-  if (data.weather) {
-    this.updateElement('currentTemp', `${Math.round(data.weather.temperature)}°C`);
-    this.updateElement('weatherDesc', data.weather.description);
-    this.updateElement('windSpeed', data.weather.windSpeed.toFixed(1));
-    this.updateElement('visibility', data.weather.visibility.toFixed(1));
-    this.updateElement('uvIndex', data.weather.uvIndex);
-    
-    const iconElement = document.getElementById('currentWeatherIcon');
-    if (iconElement) iconElement.textContent = this.getWeatherIcon(data.weather.description);
-  }
-  
-  // Populate Irrigation Section Details
-  if (data.soil) {
-    this.updateElement('irrigationSoilMoisture', `${data.soil.moisture.toFixed(1)}%`);
-    
-    const statusElement = document.getElementById('irrigationStatus');
-    if (statusElement) {
-      if (data.soil.moisture < 25) {
-        statusElement.textContent = 'Irrigation Required';
-      } else if (data.soil.moisture < 40) {
-        statusElement.textContent = 'Monitor Closely';
-      } else {
-        statusElement.textContent = 'Optimal Level';
-      }
-    }
-  }
-  
-  // Populate Fertilizer Section Details
-  if (data.soil) {
-    this.updateNutrientBar('nitrogen', data.soil.nitrogen);
-    this.updateNutrientBar('phosphorus', data.soil.phosphorus);
-    this.updateNutrientBar('potassium', data.soil.potassium);
-  }
-  
-  // Populate Crop Health Section Details
-  if (data.cropHealth) {
-    this.updateElement('healthScoreValue', `${Math.round(data.cropHealth.score)}%`);
-    this.updateElement('healthStatus', this.getHealthStatus(data.cropHealth.score));
-    this.updateElement('growthStage', data.cropHealth.growthStage || 'Vegetative Growth');
-    this.updateElement('daysFromPlanting', `${data.cropHealth.daysFromPlanting || 45} days`);
-    this.updateElement('expectedHarvest', `${data.cropHealth.expectedHarvest || 75} days`);
-    
-    this.updateHealthFactors(data.cropHealth.factors);
-  }
-  
-  // Populate Predictions Section Details
-  if (data.yieldPrediction) {
-    this.updateElement('yieldPredictionValue', `${data.yieldPrediction.perHectare} kg/ha`);
-    this.updateElement('yieldConfidence', `${data.yieldPrediction.confidence}%`);
-    
-    const factorsContainer = document.getElementById('yieldFactors');
-    if (factorsContainer) {
-      factorsContainer.innerHTML = Object.entries(data.yieldPrediction.factors)
-        .map(([key, value]) => `
-          <div class="factor-item">
-            <span>${key.charAt(0).toUpperCase() + key.slice(1)}:</span>
-            <span>${value}%</span>
-          </div>
-        `).join('');
-    }
-  }
-  
-  // Populate Weather Impact
-  this.updateWeatherImpactDetails(data);
-  
-  // Populate AI Recommendations
-  this.updateAIRecommendationsDetails(data);
-  
-  // Populate Forecast
-  if (data.forecast) {
-    this.updateForecast(data.forecast);
-  }
-}
 
   updateFertilizerData(data) {
     if (!data.soil) return;
@@ -572,7 +714,7 @@ class SmartFarmingDashboard {
   }
 
   updateCropHealthData(data) {
-    if (!data.cropHealth) return;
+    if (!data.cropHealth || !this.hasAccess('crop-health')) return;
 
     // Update health score
     this.updateElement('healthScoreValue', `${Math.round(data.cropHealth.score)}%`);
@@ -593,7 +735,7 @@ class SmartFarmingDashboard {
   }
 
   updatePredictionsData(data) {
-    if (!data.yieldPrediction) return;
+    if (!data.yieldPrediction || !this.hasAccess('predictions')) return;
 
     // Yield prediction
     this.updateElement('yieldPredictionValue', `${data.yieldPrediction.perHectare} kg/ha`);
@@ -619,6 +761,8 @@ class SmartFarmingDashboard {
   }
 
   updateReportsData(data) {
+    if (!this.hasAccess('reports')) return;
+    
     // Update report charts
     if (this.chartsAvailable) {
       this.updateReportCharts(data);
@@ -633,6 +777,197 @@ class SmartFarmingDashboard {
     
     this.updateElement('irrigationEfficiency', '87%');
     this.updateElement('nutrientBalance', 'Good');
+  }
+
+  populateAllSectionDetails(data) {
+    // Populate Sensors Section Details
+    if (data.weather && data.soil) {
+      this.updateElement('sensorTemp', `${Math.round(data.weather.temperature)}°C`);
+      this.updateElement('sensorMoisture', `${data.soil.moisture.toFixed(1)}%`);
+      
+      if (this.hasAccess('sensors-advanced')) {
+        this.updateElement('sensorHumidity', `${data.weather.humidity}%`);
+        this.updateElement('sensorPH', data.soil.ph.toFixed(2));
+      }
+      
+      // Update trends
+      this.updateTrend('sensorTempTrend', data.weather.temperature, 25);
+      this.updateTrend('sensorMoistureTrend', data.soil.moisture, 40);
+      
+      if (this.hasAccess('sensors-advanced')) {
+        this.updateTrend('sensorHumidityTrend', data.weather.humidity, 60);
+        this.updateTrend('sensorPHTrend', data.soil.ph, 6.5);
+      }
+    }
+    
+    // Populate Weather Section Details
+    if (data.weather) {
+      this.updateElement('currentTemp', `${Math.round(data.weather.temperature)}°C`);
+      this.updateElement('weatherDesc', data.weather.description);
+      this.updateElement('windSpeed', data.weather.windSpeed.toFixed(1));
+      this.updateElement('visibility', data.weather.visibility.toFixed(1));
+      this.updateElement('uvIndex', data.weather.uvIndex);
+      
+      const iconElement = document.getElementById('currentWeatherIcon');
+      if (iconElement) iconElement.textContent = this.getWeatherIcon(data.weather.description);
+    }
+    
+    // Populate Irrigation Section Details
+    if (data.soil) {
+      this.updateElement('irrigationSoilMoisture', `${data.soil.moisture.toFixed(1)}%`);
+      
+      const statusElement = document.getElementById('irrigationStatus');
+      if (statusElement) {
+        if (data.soil.moisture < 25) {
+          statusElement.textContent = 'Irrigation Required';
+        } else if (data.soil.moisture < 40) {
+          statusElement.textContent = 'Monitor Closely';
+        } else {
+          statusElement.textContent = 'Optimal Level';
+        }
+      }
+    }
+    
+    // Populate Fertilizer Section Details
+    if (data.soil) {
+      this.updateNutrientBar('nitrogen', data.soil.nitrogen);
+      this.updateNutrientBar('phosphorus', data.soil.phosphorus);
+      this.updateNutrientBar('potassium', data.soil.potassium);
+    }
+    
+    // Populate Crop Health Section Details
+    if (data.cropHealth && this.hasAccess('crop-health')) {
+      this.updateElement('healthScoreValue', `${Math.round(data.cropHealth.score)}%`);
+      this.updateElement('healthStatus', this.getHealthStatus(data.cropHealth.score));
+      this.updateElement('growthStage', data.cropHealth.growthStage || 'Vegetative Growth');
+      this.updateElement('daysFromPlanting', `${data.cropHealth.daysFromPlanting || 45} days`);
+      this.updateElement('expectedHarvest', `${data.cropHealth.expectedHarvest || 75} days`);
+      
+      this.updateHealthFactors(data.cropHealth.factors);
+    }
+    
+    // Populate Predictions Section Details
+    if (data.yieldPrediction && this.hasAccess('predictions')) {
+      this.updateElement('yieldPredictionValue', `${data.yieldPrediction.perHectare} kg/ha`);
+      this.updateElement('yieldConfidence', `${data.yieldPrediction.confidence}%`);
+      
+      const factorsContainer = document.getElementById('yieldFactors');
+      if (factorsContainer) {
+        factorsContainer.innerHTML = Object.entries(data.yieldPrediction.factors)
+          .map(([key, value]) => `
+            <div class="factor-item">
+              <span>${key.charAt(0).toUpperCase() + key.slice(1)}:</span>
+              <span>${value}%</span>
+            </div>
+          `).join('');
+      }
+    }
+    
+    // Populate Weather Impact
+    this.updateWeatherImpactDetails(data);
+    
+    // Populate AI Recommendations
+    this.updateAIRecommendationsDetails(data);
+    
+    // Populate Forecast
+    if (data.forecast) {
+      this.updateForecast(data.forecast);
+    }
+  }
+
+  updateWeatherImpactDetails(data) {
+    const weatherImpact = document.getElementById('weatherImpact');
+    if (!weatherImpact || !data.weather) return;
+    
+    const tempImpact = data.weather.temperature >= 20 && data.weather.temperature <= 28 ? 'Positive' : 'Negative';
+    const humidityImpact = data.weather.humidity >= 50 && data.weather.humidity <= 70 ? 'Positive' : 'Neutral';
+    const overallImpact = tempImpact === 'Positive' && humidityImpact === 'Positive' ? 'Positive' : 'Moderate';
+    
+    weatherImpact.innerHTML = `
+      <div class="impact-summary">
+        <h4>Overall Impact: ${overallImpact}</h4>
+        <p>Current weather conditions in ${data.location?.city || 'your area'} are ${data.weather.temperature > 30 ? 'challenging due to high temperatures' : 'favorable for crop growth'}.</p>
+      </div>
+      <div class="impact-factors">
+        <div class="impact-factor">
+          <span class="factor-name">Temperature (${Math.round(data.weather.temperature)}°C):</span>
+          <span class="factor-impact ${tempImpact.toLowerCase()}">${tempImpact}</span>
+        </div>
+        <div class="impact-factor">
+          <span class="factor-name">Humidity (${data.weather.humidity}%):</span>
+          <span class="factor-impact ${humidityImpact.toLowerCase()}">${humidityImpact}</span>
+        </div>
+        <div class="impact-factor">
+          <span class="factor-name">Soil Moisture:</span>
+          <span class="factor-impact positive">Good</span>
+        </div>
+      </div>
+    `;
+  }
+
+  updateAIRecommendationsDetails(data) {
+    const aiRecommendations = document.getElementById('aiRecommendations');
+    if (!aiRecommendations || !this.hasAccess('predictions')) return;
+    
+    let recommendations = [];
+    
+    // Smart recommendations based on real data
+    if (data.weather?.temperature > 30) {
+      recommendations.push({
+        icon: '🌡️',
+        title: 'Heat Stress Management',
+        description: `Temperature at ${Math.round(data.weather.temperature)}°C is high. Consider shade nets or increased irrigation frequency during peak hours.`,
+        priority: 'High'
+      });
+    }
+    
+    if (data.cropHealth?.score > 80) {
+      recommendations.push({
+        icon: '🤖',
+        title: 'Maintain Excellence',
+        description: `Crop health is excellent at ${Math.round(data.cropHealth.score)}%. Continue current management practices for optimal yield.`,
+        priority: 'Low'
+      });
+    }
+    
+    if (data.soil?.moisture < 40) {
+      recommendations.push({
+        icon: '💧',
+        title: 'Smart Irrigation',
+        description: `Soil moisture at ${data.soil.moisture.toFixed(1)}%. Monitor closely and irrigate within 24-48 hours if no rainfall expected.`,
+        priority: 'Medium'
+      });
+    }
+    
+    if (data.yieldPrediction) {
+      recommendations.push({
+        icon: '📈',
+        title: 'Yield Optimization',
+        description: `Based on current conditions, predicted yield is ${data.yieldPrediction.perHectare} kg/ha with ${data.yieldPrediction.confidence}% confidence.`,
+        priority: 'Low'
+      });
+    }
+    
+    // Always add at least one recommendation
+    if (recommendations.length === 0) {
+      recommendations.push({
+        icon: '✅',
+        title: 'System Optimal',
+        description: 'All parameters are within normal ranges. Continue monitoring for best results.',
+        priority: 'Low'
+      });
+    }
+    
+    aiRecommendations.innerHTML = recommendations.map(rec => `
+      <div class="ai-recommendation">
+        <div class="ai-rec-header">
+          <span class="ai-rec-icon">${rec.icon}</span>
+          <strong>${rec.title}</strong>
+        </div>
+        <p>${rec.description}</p>
+        <div class="ai-rec-priority">Priority: ${rec.priority}</div>
+      </div>
+    `).join('');
   }
 
   // Chart Initialization
@@ -1061,11 +1396,11 @@ class SmartFarmingDashboard {
     }
   }
 
-  // Event Listeners
+  // Event Listeners with Subscription Checks
   setupEventListeners() {
     console.log('🔧 Setting up event listeners...');
     
-    // Navigation
+    // Navigation with premium checks
     this.setupNavigation();
 
     // Refresh button
@@ -1077,7 +1412,7 @@ class SmartFarmingDashboard {
       });
     }
 
-    // Action buttons
+    // Action buttons with premium checks
     const quickIrrigateBtn = document.getElementById('quickIrrigateBtn');
     if (quickIrrigateBtn) {
       quickIrrigateBtn.addEventListener('click', () => {
@@ -1097,7 +1432,9 @@ class SmartFarmingDashboard {
     const exportDataBtn = document.getElementById('exportDataBtn');
     if (exportDataBtn) {
       exportDataBtn.addEventListener('click', () => {
-        this.exportData();
+        if (this.checkPremiumFeature('export')) {
+          this.exportData();
+        }
       });
     }
 
@@ -1123,6 +1460,14 @@ class SmartFarmingDashboard {
       });
     }
 
+    // Close modal when clicking outside
+    window.onclick = (event) => {
+      const modal = document.getElementById('upgradeModal');
+      if (event.target === modal) {
+        this.closeUpgradeModal();
+      }
+    };
+
     console.log('✅ Event listeners set up complete');
   }
 
@@ -1138,6 +1483,19 @@ class SmartFarmingDashboard {
     navButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         const target = btn.getAttribute('data-target');
+        
+        // Check premium access for restricted sections
+        if (btn.classList.contains('premium-required')) {
+          if (target === 'crop-health' && !this.hasAccess('crop-health')) {
+            this.showUpgradeModal('pro');
+            return;
+          }
+          if ((target === 'reports' || target === 'predictions') && !this.hasAccess('reports')) {
+            this.showUpgradeModal('premium');
+            return;
+          }
+        }
+        
         console.log('🔘 Navigation clicked:', target);
         
         // Update active button
@@ -1169,7 +1527,9 @@ class SmartFarmingDashboard {
     if (this.data.current) {
       switch (sectionId) {
         case 'sensors':
-          this.updateSensorData(this.data.current);
+          if (this.hasAccess('sensors-basic')) {
+            this.updateSensorData(this.data.current);
+          }
           break;
         case 'weather':
           this.updateWeatherData(this.data.current);
@@ -1181,13 +1541,19 @@ class SmartFarmingDashboard {
           this.updateFertilizerData(this.data.current);
           break;
         case 'crop-health':
-          this.updateCropHealthData(this.data.current);
+          if (this.hasAccess('crop-health')) {
+            this.updateCropHealthData(this.data.current);
+          }
           break;
         case 'reports':
-          this.updateReportsData(this.data.current);
+          if (this.hasAccess('reports')) {
+            this.updateReportsData(this.data.current);
+          }
           break;
         case 'predictions':
-          this.updatePredictionsData(this.data.current);
+          if (this.hasAccess('predictions')) {
+            this.updatePredictionsData(this.data.current);
+          }
           break;
       }
     }
@@ -1485,104 +1851,10 @@ class SmartFarmingDashboard {
     };
     return descriptions[impact];
   }
-updateWeatherImpactDetails(data) {
-  const weatherImpact = document.getElementById('weatherImpact');
-  if (!weatherImpact || !data.weather) return;
-  
-  const tempImpact = data.weather.temperature >= 20 && data.weather.temperature <= 28 ? 'Positive' : 'Negative';
-  const humidityImpact = data.weather.humidity >= 50 && data.weather.humidity <= 70 ? 'Positive' : 'Neutral';
-  const overallImpact = tempImpact === 'Positive' && humidityImpact === 'Positive' ? 'Positive' : 'Moderate';
-  
-  weatherImpact.innerHTML = `
-    <div class="impact-summary">
-      <h4>Overall Impact: ${overallImpact}</h4>
-      <p>Current weather conditions in ${data.location?.city || 'your area'} are ${data.weather.temperature > 30 ? 'challenging due to high temperatures' : 'favorable for crop growth'}.</p>
-    </div>
-    <div class="impact-factors">
-      <div class="impact-factor">
-        <span class="factor-name">Temperature (${Math.round(data.weather.temperature)}°C):</span>
-        <span class="factor-impact ${tempImpact.toLowerCase()}">${tempImpact}</span>
-      </div>
-      <div class="impact-factor">
-        <span class="factor-name">Humidity (${data.weather.humidity}%):</span>
-        <span class="factor-impact ${humidityImpact.toLowerCase()}">${humidityImpact}</span>
-      </div>
-      <div class="impact-factor">
-        <span class="factor-name">Soil Moisture:</span>
-        <span class="factor-impact positive">Good</span>
-      </div>
-    </div>
-  `;
-}
-
-updateAIRecommendationsDetails(data) {
-  const aiRecommendations = document.getElementById('aiRecommendations');
-  if (!aiRecommendations) return;
-  
-  let recommendations = [];
-  
-  // Smart recommendations based on real data
-  if (data.weather?.temperature > 30) {
-    recommendations.push({
-      icon: '🌡️',
-      title: 'Heat Stress Management',
-      description: `Temperature at ${Math.round(data.weather.temperature)}°C is high. Consider shade nets or increased irrigation frequency during peak hours.`,
-      priority: 'High'
-    });
-  }
-  
-  if (data.cropHealth?.score > 80) {
-    recommendations.push({
-      icon: '🤖',
-      title: 'Maintain Excellence',
-      description: `Crop health is excellent at ${Math.round(data.cropHealth.score)}%. Continue current management practices for optimal yield.`,
-      priority: 'Low'
-    });
-  }
-  
-  if (data.soil?.moisture < 40) {
-    recommendations.push({
-      icon: '💧',
-      title: 'Smart Irrigation',
-      description: `Soil moisture at ${data.soil.moisture.toFixed(1)}%. Monitor closely and irrigate within 24-48 hours if no rainfall expected.`,
-      priority: 'Medium'
-    });
-  }
-  
-  if (data.yieldPrediction) {
-    recommendations.push({
-      icon: '📈',
-      title: 'Yield Optimization',
-      description: `Based on current conditions, predicted yield is ${data.yieldPrediction.perHectare} kg/ha with ${data.yieldPrediction.confidence}% confidence.`,
-      priority: 'Low'
-    });
-  }
-  
-  // Always add at least one recommendation
-  if (recommendations.length === 0) {
-    recommendations.push({
-      icon: '✅',
-      title: 'System Optimal',
-      description: 'All parameters are within normal ranges. Continue monitoring for best results.',
-      priority: 'Low'
-    });
-  }
-  
-  aiRecommendations.innerHTML = recommendations.map(rec => `
-    <div class="ai-recommendation">
-      <div class="ai-rec-header">
-        <span class="ai-rec-icon">${rec.icon}</span>
-        <strong>${rec.title}</strong>
-      </div>
-      <p>${rec.description}</p>
-      <div class="ai-rec-priority">Priority: ${rec.priority}</div>
-    </div>
-  `).join('');
-}
 
   updateAIRecommendations(data) {
     const container = document.getElementById('aiRecommendations');
-    if (!container) return;
+    if (!container || !this.hasAccess('predictions')) return;
 
     const recommendations = this.generateAIRecommendations(data);
     container.innerHTML = recommendations.map(rec => `
@@ -1632,6 +1904,10 @@ updateAIRecommendationsDetails(data) {
   }
 
   exportData() {
+    if (!this.checkPremiumFeature('export')) {
+      return;
+    }
+
     if (!this.data.current) {
       this.showNotification('No data to export', 'warning');
       return;
@@ -1722,7 +1998,33 @@ updateAIRecommendationsDetails(data) {
   }
 }
 
-// Global Functions
+// Global Functions for Subscription
+window.showUpgradeModal = function(suggestedPlan = 'pro') {
+  if (window.dashboard) {
+    window.dashboard.showUpgradeModal(suggestedPlan);
+  }
+};
+
+window.closeUpgradeModal = function() {
+  if (window.dashboard) {
+    window.dashboard.closeUpgradeModal();
+  }
+};
+
+window.subscribeToPlan = function(plan) {
+  if (window.dashboard) {
+    window.dashboard.subscribeToPlan(plan);
+  }
+};
+
+window.checkPremiumFeature = function(feature) {
+  if (window.dashboard) {
+    return window.dashboard.checkPremiumFeature(feature);
+  }
+  return false;
+};
+
+// Existing Global Functions
 window.quickIrrigate = function() {
   if (window.dashboard) {
     dashboard.showNotification('💧 Irrigation system activated!', 'success');
@@ -1737,7 +2039,9 @@ window.viewAlerts = function() {
 
 window.exportData = function() {
   if (window.dashboard) {
-    window.dashboard.exportData();
+    if (window.dashboard.checkPremiumFeature('export')) {
+      window.dashboard.exportData();
+    }
   } else {
     alert('Data export feature - would export current dashboard data as JSON/CSV');
   }
@@ -1746,7 +2050,7 @@ window.exportData = function() {
 // Initialize Dashboard when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
-    console.log('🚀 Initializing Smart Farming Dashboard...');
+    console.log('🚀 Initializing Smart Farming Dashboard with Subscription Features...');
     window.dashboard = new SmartFarmingDashboard();
   }, 500);
 });
