@@ -1475,3 +1475,13 @@ body {
     max-height: 200px !important;
   }
 }
+/* Ensure premium overlays are properly hidden when access is granted */
+.premium-section-overlay[style*="display: none"],
+.premium-overlay[style*="display: none"] {
+  display: none !important;
+}
+
+/* Show actual content when premium overlay is hidden */
+.premium-section:not(:has(.premium-section-overlay[style*="display: flex"])) .panel-content {
+  display: block;
+}
