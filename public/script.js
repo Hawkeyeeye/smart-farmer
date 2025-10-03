@@ -114,59 +114,80 @@ class SmartFarmingDashboard {
     return this.planFeatures[this.currentPlan].includes(feature);
   }
 
-  updateFeatureAccess() {
-    // Update plan cards
-    document.querySelectorAll('.pricing-card').forEach(card => {
-      card.classList.remove('current');
-      const button = card.querySelector('.plan-btn');
-      if (button) {
-        button.disabled = false;
-        button.textContent = card.id === 'freePlanCard' ? 'Downgrade to Free' : 
-                           card.id === 'proPlanCard' ? 'Upgrade to Pro' : 'Upgrade to Premium';
-      }
-    });
+ updateFeatureAccess() {
+  // Update plan cards
+  document.querySelectorAll('.pricing-card').forEach(card => {
+    card.classList.remove('current');
+    const button = card.querySelector('.plan-btn');
+    if (button) {
+      button.disabled = false;
+      button.textContent = card.id === 'freePlanCard' ? 'Downgrade to Free' : 
+                         card.id === 'proPlanCard' ? 'Upgrade to Pro' : 'Upgrade to Premium';
+    }
+  });
 
-    const currentCard = document.getElementById(`${this.currentPlan}PlanCard`);
-    if (currentCard) {
-      currentCard.classList.add('current');
-      const button = currentCard.querySelector('.plan-btn');
-      if (button) {
-        button.disabled = true;
-        button.textContent = 'Current Plan';
+  const currentCard = document.getElementById(`${this.currentPlan}PlanCard`);
+  if (currentCard) {
+    currentCard.classList.add('current');
+    const button = currentCard.querySelector('.plan-btn');
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Current Plan';
+    }
+  }
+
+  // FIXED: Hide/show premium overlays based on access
+  document.querySelectorAll('.premium-feature').forEach(feature => {
+    const overlay = feature.querySelector('.premium-overlay');
+    if (overlay) {
+      // Check specific feature access
+      let shouldHideOverlay = false;
+      
+      if (feature.id === 'crop-health' && this.hasAccess('crop-health')) {
+        shouldHideOverlay = true;
+      } else if (feature.classList.contains('sensors-advanced') && this.hasAccess('sensors-advanced')) {
+        shouldHideOverlay = true;
+      } else if (feature.classList.contains('dashboard-health') && this.hasAccess('dashboard-health')) {
+        shouldHideOverlay = true;
+      } else if (feature.classList.contains('dashboard-yield') && this.hasAccess('dashboard-yield')) {
+        shouldHideOverlay = true;
+      }
+      
+      overlay.style.display = shouldHideOverlay ? 'none' : 'flex';
+    }
+  });
+
+  // FIXED: Hide premium section overlays
+  document.querySelectorAll('.premium-section').forEach(section => {
+    const overlay = section.querySelector('.premium-section-overlay');
+    if (overlay) {
+      const sectionId = section.id;
+      
+      if ((sectionId === 'crop-health' && this.hasAccess('crop-health')) ||
+          (sectionId === 'reports' && this.hasAccess('reports')) ||
+          (sectionId === 'predictions' && this.hasAccess('predictions'))) {
+        overlay.style.display = 'none';
+      } else {
+        overlay.style.display = 'flex';
       }
     }
+  });
 
-    // Show/hide premium overlays
-    document.querySelectorAll('.premium-feature').forEach(feature => {
-      const overlay = feature.querySelector('.premium-overlay');
-      if (overlay) {
-        if (feature.classList.contains('sensors-advanced') && !this.hasAccess('sensors-advanced')) {
-          overlay.style.display = 'flex';
-        } else if (feature.classList.contains('dashboard-health') && !this.hasAccess('dashboard-health')) {
-          overlay.style.display = 'flex';
-        } else if (feature.classList.contains('dashboard-yield') && !this.hasAccess('dashboard-yield')) {
-          overlay.style.display = 'flex';
-        } else {
-          overlay.style.display = 'none';
-        }
-      }
-    });
-
-    // Update navigation buttons
-    document.querySelectorAll('.nav-btn.premium-required').forEach(btn => {
-      const target = btn.getAttribute('data-target');
-      if (target === 'crop-health' && !this.hasAccess('crop-health')) {
-        btn.style.opacity = '0.6';
-        btn.style.pointerEvents = 'none';
-      } else if ((target === 'reports' || target === 'predictions') && !this.hasAccess('reports')) {
-        btn.style.opacity = '0.6';
-        btn.style.pointerEvents = 'none';
-      } else {
-        btn.style.opacity = '1';
-        btn.style.pointerEvents = 'auto';
-      }
-    });
-  }
+  // Update navigation buttons
+  document.querySelectorAll('.nav-btn.premium-required').forEach(btn => {
+    const target = btn.getAttribute('data-target');
+    if (target === 'crop-health' && !this.hasAccess('crop-health')) {
+      btn.style.opacity = '0.6';
+      btn.style.pointerEvents = 'none';
+    } else if ((target === 'reports' || target === 'predictions') && !this.hasAccess('reports')) {
+      btn.style.opacity = '0.6';
+      btn.style.pointerEvents = 'none';
+    } else {
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'auto';
+    }
+  });
+}
 
   showUpgradeModal(suggestedPlan = 'pro') {
     const modal = document.getElementById('upgradeModal');
@@ -248,32 +269,54 @@ class SmartFarmingDashboard {
   }
 
   subscribeToPlan(plan) {
-    // Show loading state
-    const buttons = document.querySelectorAll('.modal-plan-btn, .plan-btn');
-    buttons.forEach(button => {
-      if (button.textContent.toLowerCase().includes(plan.toLowerCase())) {
-        const originalText = button.textContent;
-        button.textContent = 'Processing...';
-        button.disabled = true;
+  // Show loading state
+  const buttons = document.querySelectorAll('.modal-plan-btn, .plan-btn');
+  buttons.forEach(button => {
+    if (button.textContent.toLowerCase().includes(plan.toLowerCase())) {
+      const originalText = button.textContent;
+      button.textContent = 'Processing...';
+      button.disabled = true;
+      
+      // Simulate payment process
+      setTimeout(() => {
+        // Simulate successful payment
+        this.currentPlan = plan;
+        this.updateSubscriptionBadge();
+        this.updateFeatureAccess();
         
-        // Simulate payment process (replace with real payment gateway)
-        setTimeout(() => {
-          // Simulate successful payment
-          this.currentPlan = plan;
-          this.updateSubscriptionBadge();
-          this.updateFeatureAccess();
-          this.closeUpgradeModal();
+        // ADDED: Force refresh current section data
+        const activeSection = document.querySelector('.nav-btn.active');
+        if (activeSection) {
+          const target = activeSection.getAttribute('data-target');
+          this.handleSectionChange(target);
           
-          // Show success message
-          this.showSubscriptionSuccess(plan);
-          
-          // Restore button
-          button.textContent = originalText;
-          button.disabled = false;
-        }, 2000);
-      }
-    });
-  }
+          // If current data exists, update the section
+          if (this.data.current) {
+            if (target === 'crop-health' && this.hasAccess('crop-health')) {
+              this.updateCropHealthData(this.data.current);
+            }
+            if (target === 'reports' && this.hasAccess('reports')) {
+              this.updateReportsData(this.data.current);
+            }
+            if (target === 'predictions' && this.hasAccess('predictions')) {
+              this.updatePredictionsData(this.data.current);
+            }
+          }
+        }
+        
+        this.closeUpgradeModal();
+        
+        // Show success message
+        this.showSubscriptionSuccess(plan);
+        
+        // Restore button
+        button.textContent = originalText;
+        button.disabled = false;
+      }, 2000);
+    }
+  });
+}
+
 
   showSubscriptionSuccess(plan) {
     const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
