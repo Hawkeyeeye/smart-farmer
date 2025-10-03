@@ -26,6 +26,8 @@
         </div>
       </div>
       <div class="header-right">
+        <!-- Subscription Badge -->
+        <div class="subscription-badge" id="subscriptionBadge">FREE PLAN</div>
         <div class="datetime-container">
           <div id="currentDateTime" class="current-time">Loading...</div>
           <div id="lastUpdate" class="last-update">Last updated: --</div>
@@ -49,13 +51,18 @@
           <h3>MANAGEMENT</h3>
           <button class="nav-btn" data-target="irrigation">💧 Irrigation</button>
           <button class="nav-btn" data-target="fertilizer">🧪 Fertilizer</button>
-          <button class="nav-btn" data-target="crop-health">🌿 Crop Health</button>
+          <button class="nav-btn premium-required" data-target="crop-health">🌿 Crop Health <span class="premium-badge">PRO</span></button>
         </div>
         
         <div class="nav-section">
           <h3>ANALYTICS</h3>
-          <button class="nav-btn" data-target="reports">📈 Reports</button>
-          <button class="nav-btn" data-target="predictions">🔮 Predictions</button>
+          <button class="nav-btn premium-required" data-target="reports">📈 Reports <span class="premium-badge">PREMIUM</span></button>
+          <button class="nav-btn premium-required" data-target="predictions">🔮 Predictions <span class="premium-badge">PREMIUM</span></button>
+        </div>
+
+        <div class="nav-section">
+          <h3>ACCOUNT</h3>
+          <button class="nav-btn subscription-btn" data-target="subscription">💎 Upgrade Plan</button>
         </div>
       </nav>
 
@@ -85,21 +92,29 @@
               </div>
             </div>
             
-            <div class="overview-card">
+            <div class="overview-card premium-feature">
               <div class="card-icon">🌿</div>
               <div class="card-content">
-                <h3>CROP HEALTH</h3>
+                <h3>CROP HEALTH <span class="premium-badge-small">PRO</span></h3>
                 <div class="card-value" id="overviewHealth">--%</div>
                 <div class="card-status" id="overviewHealthStatus">Loading...</div>
               </div>
+              <div class="premium-overlay" onclick="showUpgradeModal('pro')">
+                <div class="premium-lock">🔒</div>
+                <p>Upgrade to PRO</p>
+              </div>
             </div>
             
-            <div class="overview-card">
+            <div class="overview-card premium-feature">
               <div class="card-icon">📈</div>
               <div class="card-content">
-                <h3>PREDICTED YIELD</h3>
+                <h3>PREDICTED YIELD <span class="premium-badge-small">PREMIUM</span></h3>
                 <div class="card-value" id="overviewYield">-- kg/ha</div>
                 <div class="card-status" id="overviewYieldStatus">Loading...</div>
+              </div>
+              <div class="premium-overlay" onclick="showUpgradeModal('premium')">
+                <div class="premium-lock">🔒</div>
+                <p>Upgrade to PREMIUM</p>
               </div>
             </div>
           </div>
@@ -109,7 +124,7 @@
             <div class="action-buttons">
               <button class="action-btn" id="quickIrrigateBtn">💧 Quick Irrigate</button>
               <button class="action-btn" id="viewAlertsBtn">🚨 View Alerts</button>
-              <button class="action-btn" id="exportDataBtn">📥 Export Data</button>
+              <button class="action-btn premium-required" id="exportDataBtn" onclick="checkPremiumFeature('export')">📥 Export Data <span class="premium-badge-small">PRO</span></button>
             </div>
           </div>
 
@@ -143,8 +158,8 @@
               </div>
             </div>
 
-            <div class="sensor-card">
-              <h3>💨 Humidity</h3>
+            <div class="sensor-card premium-feature">
+              <h3>💨 Humidity <span class="premium-badge-small">PRO</span></h3>
               <div class="sensor-value-container">
                 <div class="sensor-value" id="sensorHumidity">--%</div>
                 <div class="sensor-trend" id="sensorHumidityTrend">--</div>
@@ -152,10 +167,17 @@
               <div class="chart-container">
                 <canvas id="humidityChart" aria-label="Humidity Chart"></canvas>
               </div>
+              <div class="premium-overlay" onclick="showUpgradeModal('pro')">
+                <div class="premium-content">
+                  <div class="premium-lock">🔒</div>
+                  <p>Unlock Advanced Sensors with PRO</p>
+                  <button class="upgrade-btn">Upgrade Now</button>
+                </div>
+              </div>
             </div>
 
-            <div class="sensor-card">
-              <h3>🧪 Soil pH</h3>
+            <div class="sensor-card premium-feature">
+              <h3>🧪 Soil pH <span class="premium-badge-small">PRO</span></h3>
               <div class="sensor-value-container">
                 <div class="sensor-value" id="sensorPH">--</div>
                 <div class="sensor-trend" id="sensorPHTrend">--</div>
@@ -163,12 +185,26 @@
               <div class="chart-container">
                 <canvas id="phChart" aria-label="pH Chart"></canvas>
               </div>
+              <div class="premium-overlay" onclick="showUpgradeModal('pro')">
+                <div class="premium-content">
+                  <div class="premium-lock">🔒</div>
+                  <p>Unlock Soil Analysis with PRO</p>
+                  <button class="upgrade-btn">Upgrade Now</button>
+                </div>
+              </div>
             </div>
 
-            <div class="sensor-card wide">
-              <h3>📊 Historical Trends</h3>
+            <div class="sensor-card wide premium-feature">
+              <h3>📊 Historical Trends <span class="premium-badge-small">PREMIUM</span></h3>
               <div class="chart-container">
                 <canvas id="historicalChart" aria-label="Historical Data Chart"></canvas>
+              </div>
+              <div class="premium-overlay" onclick="showUpgradeModal('premium')">
+                <div class="premium-content">
+                  <div class="premium-lock">🔒</div>
+                  <p>Access Historical Analytics with PREMIUM</p>
+                  <button class="upgrade-btn">Upgrade Now</button>
+                </div>
               </div>
             </div>
           </div>
@@ -255,113 +291,151 @@
           <div id="fertilizerRecommendations" class="recommendations-container"></div>
         </section>
 
-        <!-- Crop Health Section -->
-        <section class="panel hidden" id="crop-health">
-          <h2>🌿 Crop Health Analysis</h2>
-          
-          <div class="health-overview">
-            <div class="health-score-card">
-              <h3>Overall Health Score</h3>
-              <div class="health-score-display">
-                <div class="score-circle">
-                  <canvas id="healthScoreChart" width="120" height="120"></canvas>
-                  <div class="score-text">
-                    <span id="healthScoreValue">--%</span>
-                  </div>
-                </div>
+        <!-- Crop Health Section - PREMIUM FEATURE -->
+        <section class="panel hidden premium-section" id="crop-health">
+          <div class="premium-section-overlay">
+            <div class="premium-section-content">
+              <div class="premium-icon">🔒</div>
+              <h2>🌿 Crop Health Analysis</h2>
+              <p>Get advanced crop health insights, disease detection, and growth optimization with our PRO plan.</p>
+              <div class="premium-features-list">
+                <div class="premium-feature-item">✓ Real-time health scoring</div>
+                <div class="premium-feature-item">✓ Disease early detection</div>
+                <div class="premium-feature-item">✓ Growth stage tracking</div>
+                <div class="premium-feature-item">✓ Personalized recommendations</div>
               </div>
-              <div class="health-status" id="healthStatus">Analyzing...</div>
-            </div>
-            
-            <div class="growth-info">
-              <h3>Growth Information</h3>
-              <div class="growth-details">
-                <div class="growth-item">
-                  <span class="label">Current Stage:</span>
-                  <span id="growthStage">--</span>
-                </div>
-                <div class="growth-item">
-                  <span class="label">Days from Planting:</span>
-                  <span id="daysFromPlanting">--</span>
-                </div>
-                <div class="growth-item">
-                  <span class="label">Expected Harvest:</span>
-                  <span id="expectedHarvest">--</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="health-factors">
-            <h3>Contributing Factors</h3>
-            <div class="factors-grid" id="healthFactors"></div>
-          </div>
-        </section>
-
-        <!-- Reports Section -->
-        <section class="panel hidden" id="reports">
-          <h2>📈 Analytics & Reports</h2>
-          
-          <div class="reports-grid">
-            <div class="report-card">
-              <h3>📊 Yield Progress</h3>
-              <canvas id="yieldChart" aria-label="Yield Progress Chart"></canvas>
-            </div>
-            
-            <div class="report-card">
-              <h3>💰 Cost Savings</h3>
-              <canvas id="costSavingsChart" aria-label="Cost Savings Chart"></canvas>
-            </div>
-            
-            <div class="report-card">
-              <h3>💧 Water Usage</h3>
-              <canvas id="waterUsageChart" aria-label="Water Usage Chart"></canvas>
-            </div>
-            
-            <div class="report-card">
-              <h3>📈 Performance Metrics</h3>
-              <div class="metrics-list">
-                <div class="metric-item">
-                  <span class="metric-label">Average Soil Moisture:</span>
-                  <span class="metric-value" id="avgMoisture">--%</span>
-                </div>
-                <div class="metric-item">
-                  <span class="metric-label">Irrigation Efficiency:</span>
-                  <span class="metric-value" id="irrigationEfficiency">--%</span>
-                </div>
-                <div class="metric-item">
-                  <span class="metric-label">Nutrient Balance:</span>
-                  <span class="metric-value" id="nutrientBalance">--</span>
-                </div>
-              </div>
+              <button class="upgrade-btn-large" onclick="showUpgradeModal('pro')">Upgrade to PRO - ₹299/month</button>
             </div>
           </div>
         </section>
 
-        <!-- Predictions Section -->
-        <section class="panel hidden" id="predictions">
-          <h2>🔮 AI Predictions & Insights</h2>
-          
-          <div class="predictions-grid">
-            <div class="prediction-card">
-              <h3>📈 Yield Prediction</h3>
-              <div class="prediction-content">
-                <div class="prediction-value" id="yieldPredictionValue">-- kg/ha</div>
-                <div class="prediction-confidence">
-                  Confidence: <span id="yieldConfidence">--%</span>
-                </div>
-                <div class="prediction-details" id="yieldFactors"></div>
+        <!-- Reports Section - PREMIUM FEATURE -->
+        <section class="panel hidden premium-section" id="reports">
+          <div class="premium-section-overlay">
+            <div class="premium-section-content">
+              <div class="premium-icon">🔒</div>
+              <h2>📈 Analytics & Reports</h2>
+              <p>Unlock comprehensive analytics, yield predictions, and detailed reports with our PREMIUM plan.</p>
+              <div class="premium-features-list">
+                <div class="premium-feature-item">✓ Yield prediction models</div>
+                <div class="premium-feature-item">✓ Cost savings analysis</div>
+                <div class="premium-feature-item">✓ Historical data comparison</div>
+                <div class="premium-feature-item">✓ Export to PDF/Excel</div>
+                <div class="premium-feature-item">✓ Multi-farm management</div>
               </div>
+              <button class="upgrade-btn-large" onclick="showUpgradeModal('premium')">Upgrade to PREMIUM - ₹599/month</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Predictions Section - PREMIUM FEATURE -->
+        <section class="panel hidden premium-section" id="predictions">
+          <div class="premium-section-overlay">
+            <div class="premium-section-content">
+              <div class="premium-icon">🔒</div>
+              <h2>🔮 AI Predictions & Insights</h2>
+              <p>Access powerful AI-driven predictions and insights with our PREMIUM plan.</p>
+              <div class="premium-features-list">
+                <div class="premium-feature-item">✓ ML-powered yield forecasting</div>
+                <div class="premium-feature-item">✓ Weather impact analysis</div>
+                <div class="premium-feature-item">✓ Market price predictions</div>
+                <div class="premium-feature-item">✓ Personalized AI recommendations</div>
+                <div class="premium-feature-item">✓ Risk assessment models</div>
+              </div>
+              <button class="upgrade-btn-large" onclick="showUpgradeModal('premium')">Upgrade to PREMIUM - ₹599/month</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Subscription Plans Section -->
+        <section class="panel hidden" id="subscription">
+          <h2>💎 Choose Your Plan</h2>
+          
+          <div class="pricing-hero">
+            <h3>Unlock the Full Potential of Smart Farming</h3>
+            <p>Choose the plan that best fits your farming needs and scale your operations with advanced insights.</p>
+          </div>
+
+          <div class="pricing-cards">
+            <div class="pricing-card free" id="freePlanCard">
+              <h3>Free</h3>
+              <div class="price">₹0<span>/month</span></div>
+              <div class="plan-description">Perfect for getting started with basic monitoring</div>
+              <ul class="features-list">
+                <li class="included">✓ Basic sensor monitoring (Temperature, Soil Moisture)</li>
+                <li class="included">✓ 7-day weather forecast</li>
+                <li class="included">✓ Simple irrigation alerts</li>
+                <li class="included">✓ Basic dashboard view</li>
+                <li class="excluded">✗ Advanced sensors (pH, Humidity)</li>
+                <li class="excluded">✗ Crop health analysis</li>
+                <li class="excluded">✗ Historical data</li>
+                <li class="excluded">✗ AI recommendations</li>
+              </ul>
+              <button class="plan-btn current" disabled>Current Plan</button>
             </div>
             
-            <div class="prediction-card">
-              <h3>🌧️ Weather Impact</h3>
-              <div class="weather-impact" id="weatherImpact"></div>
+            <div class="pricing-card pro popular" id="proPlanCard">
+              <div class="popular-badge">Most Popular</div>
+              <h3>Pro</h3>
+              <div class="price">₹299<span>/month</span></div>
+              <div class="plan-description">Advanced monitoring with crop health insights</div>
+              <ul class="features-list">
+                <li class="included">✓ All Free features</li>
+                <li class="included">✓ Advanced sensors (pH, Humidity, NPK)</li>
+                <li class="included">✓ Crop health analysis & scoring</li>
+                <li class="included">✓ Disease early detection</li>
+                <li class="included">✓ 30-day historical data</li>
+                <li class="included">✓ Email/SMS alerts</li>
+                <li class="included">✓ Data export (CSV)</li>
+                <li class="excluded">✗ Yield predictions</li>
+                <li class="excluded">✗ Multi-farm management</li>
+              </ul>
+              <button class="plan-btn" onclick="subscribeToPlan('pro')">Upgrade to Pro</button>
             </div>
             
-            <div class="prediction-card">
-              <h3>💡 AI Recommendations</h3>
-              <div class="ai-recommendations" id="aiRecommendations"></div>
+            <div class="pricing-card premium enterprise" id="premiumPlanCard">
+              <div class="enterprise-badge">Enterprise</div>
+              <h3>Premium</h3>
+              <div class="price">₹599<span>/month</span></div>
+              <div class="plan-description">Complete farm analytics with AI insights</div>
+              <ul class="features-list">
+                <li class="included">✓ All Pro features</li>
+                <li class="included">✓ AI-powered yield predictions</li>
+                <li class="included">✓ Advanced analytics & reports</li>
+                <li class="included">✓ Cost savings analysis</li>
+                <li class="included">✓ Multi-farm management</li>
+                <li class="included">✓ Unlimited historical data</li>
+                <li class="included">✓ Priority 24/7 support</li>
+                <li class="included">✓ API access</li>
+                <li class="included">✓ Custom integrations</li>
+              </ul>
+              <button class="plan-btn premium-btn" onclick="subscribeToPlan('premium')">Upgrade to Premium</button>
+            </div>
+          </div>
+
+          <div class="subscription-benefits">
+            <h3>Why Upgrade?</h3>
+            <div class="benefits-grid">
+              <div class="benefit-card">
+                <div class="benefit-icon">📈</div>
+                <h4>Increase Yield by 25%</h4>
+                <p>Data-driven insights help optimize growing conditions</p>
+              </div>
+              <div class="benefit-card">
+                <div class="benefit-icon">💰</div>
+                <h4>Reduce Costs by 30%</h4>
+                <p>Smart irrigation and fertilization save resources</p>
+              </div>
+              <div class="benefit-card">
+                <div class="benefit-icon">🤖</div>
+                <h4>AI-Powered Recommendations</h4>
+                <p>Get personalized advice based on your farm data</p>
+              </div>
+              <div class="benefit-card">
+                <div class="benefit-icon">📱</div>
+                <h4>Real-time Alerts</h4>
+                <p>Never miss critical changes in your farm conditions</p>
+              </div>
             </div>
           </div>
         </section>
@@ -384,15 +458,33 @@
     </footer>
   </div>
 
+  <!-- Upgrade Modal -->
+  <div id="upgradeModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeUpgradeModal()">&times;</span>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
   <!-- Load Socket.IO -->
   <script src="/socket.io/socket.io.js"></script>
 
   <!-- Load Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 
-  <!-- COMPLETE DASHBOARD SCRIPT -->
+  <!-- COMPLETE DASHBOARD SCRIPT WITH SUBSCRIPTION -->
   <script>
-    console.log('🚀 Starting Complete Smart Farming Dashboard...');
+    console.log('🚀 Starting Complete Smart Farming Dashboard with Subscription Model...');
+
+    // Subscription management
+    let currentPlan = 'free'; // 'free', 'pro', 'premium'
+    
+    // Plan feature access
+    const planFeatures = {
+      free: ['dashboard-basic', 'sensors-basic', 'weather', 'irrigation-basic', 'fertilizer-basic'],
+      pro: ['dashboard-basic', 'dashboard-health', 'sensors-basic', 'sensors-advanced', 'weather', 'irrigation-basic', 'fertilizer-basic', 'crop-health', 'export-csv'],
+      premium: ['dashboard-basic', 'dashboard-health', 'dashboard-yield', 'sensors-basic', 'sensors-advanced', 'weather', 'irrigation-basic', 'fertilizer-basic', 'crop-health', 'reports', 'predictions', 'export-all', 'multi-farm', 'api-access']
+    };
 
     // Auto-hide loading screen
     setTimeout(() => {
@@ -402,11 +494,211 @@
       }
     }, 2000);
 
+    // Update subscription badge
+    function updateSubscriptionBadge() {
+      const badge = document.getElementById('subscriptionBadge');
+      switch(currentPlan) {
+        case 'free':
+          badge.textContent = 'FREE PLAN';
+          badge.className = 'subscription-badge free';
+          break;
+        case 'pro':
+          badge.textContent = 'PRO PLAN';
+          badge.className = 'subscription-badge pro';
+          break;
+        case 'premium':
+          badge.textContent = 'PREMIUM PLAN';
+          badge.className = 'subscription-badge premium';
+          break;
+      }
+    }
+
+    // Check if user has access to feature
+    function hasAccess(feature) {
+      return planFeatures[currentPlan].includes(feature);
+    }
+
+    // Update feature access based on current plan
+    function updateFeatureAccess() {
+      // Update plan cards
+      document.querySelectorAll('.pricing-card').forEach(card => {
+        card.classList.remove('current');
+        card.querySelector('.plan-btn').disabled = false;
+        card.querySelector('.plan-btn').textContent = card.id === 'freePlanCard' ? 'Downgrade to Free' : 
+                                                       card.id === 'proPlanCard' ? 'Upgrade to Pro' : 'Upgrade to Premium';
+      });
+
+      const currentCard = document.getElementById(`${currentPlan}PlanCard`);
+      if (currentCard) {
+        currentCard.classList.add('current');
+        currentCard.querySelector('.plan-btn').disabled = true;
+        currentCard.querySelector('.plan-btn').textContent = 'Current Plan';
+      }
+
+      // Show/hide premium overlays
+      document.querySelectorAll('.premium-feature').forEach(feature => {
+        const overlay = feature.querySelector('.premium-overlay');
+        if (overlay) {
+          if (feature.classList.contains('sensors-advanced') && !hasAccess('sensors-advanced')) {
+            overlay.style.display = 'flex';
+          } else if (feature.classList.contains('dashboard-health') && !hasAccess('dashboard-health')) {
+            overlay.style.display = 'flex';
+          } else if (feature.classList.contains('dashboard-yield') && !hasAccess('dashboard-yield')) {
+            overlay.style.display = 'flex';
+          } else {
+            overlay.style.display = 'none';
+          }
+        }
+      });
+
+      // Update navigation buttons
+      document.querySelectorAll('.nav-btn.premium-required').forEach(btn => {
+        const target = btn.getAttribute('data-target');
+        if (target === 'crop-health' && !hasAccess('crop-health')) {
+          btn.style.opacity = '0.6';
+          btn.style.pointerEvents = 'none';
+        } else if ((target === 'reports' || target === 'predictions') && !hasAccess('reports')) {
+          btn.style.opacity = '0.6';
+          btn.style.pointerEvents = 'none';
+        } else {
+          btn.style.opacity = '1';
+          btn.style.pointerEvents = 'auto';
+        }
+      });
+    }
+
+    // Show upgrade modal
+    function showUpgradeModal(suggestedPlan = 'pro') {
+      const modal = document.getElementById('upgradeModal');
+      const modalContent = document.getElementById('modalContent');
+      
+      modalContent.innerHTML = `
+        <div class="upgrade-modal-content">
+          <h2>🚀 Upgrade Your Plan</h2>
+          <p>Unlock powerful features to maximize your farming potential!</p>
+          
+          <div class="modal-plans">
+            <div class="modal-plan ${suggestedPlan === 'pro' ? 'recommended' : ''}">
+              <div class="modal-plan-header">
+                <h3>Pro Plan</h3>
+                ${suggestedPlan === 'pro' ? '<div class="recommended-badge">Recommended</div>' : ''}
+              </div>
+              <div class="modal-plan-price">₹299/month</div>
+              <ul class="modal-plan-features">
+                <li>✓ Advanced sensors (pH, Humidity)</li>
+                <li>✓ Crop health analysis</li>
+                <li>✓ 30-day historical data</li>
+                <li>✓ Email/SMS alerts</li>
+              </ul>
+              <button class="modal-plan-btn" onclick="subscribeToPlan('pro')">Choose Pro</button>
+            </div>
+            
+            <div class="modal-plan ${suggestedPlan === 'premium' ? 'recommended' : ''}">
+              <div class="modal-plan-header">
+                <h3>Premium Plan</h3>
+                ${suggestedPlan === 'premium' ? '<div class="recommended-badge">Recommended</div>' : ''}
+              </div>
+              <div class="modal-plan-price">₹599/month</div>
+              <ul class="modal-plan-features">
+                <li>✓ Everything in Pro</li>
+                <li>✓ AI yield predictions</li>
+                <li>✓ Advanced analytics</li>
+                <li>✓ Multi-farm management</li>
+              </ul>
+              <button class="modal-plan-btn premium" onclick="subscribeToPlan('premium')">Choose Premium</button>
+            </div>
+          </div>
+          
+          <div class="modal-benefits">
+            <h4>💡 What you'll get:</h4>
+            <div class="modal-benefit-items">
+              <div class="modal-benefit">📈 Increase yield by up to 25%</div>
+              <div class="modal-benefit">💰 Reduce costs by up to 30%</div>
+              <div class="modal-benefit">🤖 AI-powered recommendations</div>
+              <div class="modal-benefit">📱 Real-time alerts and notifications</div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      modal.style.display = 'block';
+    }
+
+    // Close upgrade modal
+    function closeUpgradeModal() {
+      document.getElementById('upgradeModal').style.display = 'none';
+    }
+
+    // Check premium feature access
+    function checkPremiumFeature(feature) {
+      if (feature === 'export' && !hasAccess('export-csv')) {
+        showUpgradeModal('pro');
+        return false;
+      }
+      if (feature === 'crop-health' && !hasAccess('crop-health')) {
+        showUpgradeModal('pro');
+        return false;
+      }
+      if ((feature === 'reports' || feature === 'predictions') && !hasAccess('reports')) {
+        showUpgradeModal('premium');
+        return false;
+      }
+      return true;
+    }
+
+    // Subscribe to plan (integrate with payment gateway)
+    function subscribeToPlan(plan) {
+      // Show loading state
+      const button = event.target;
+      const originalText = button.textContent;
+      button.textContent = 'Processing...';
+      button.disabled = true;
+
+      // Simulate payment process (replace with real payment gateway)
+      setTimeout(() => {
+        // Simulate successful payment
+        currentPlan = plan;
+        updateSubscriptionBadge();
+        updateFeatureAccess();
+        closeUpgradeModal();
+        
+        // Show success message
+        showSubscriptionSuccess(plan);
+        
+        // Restore button
+        button.textContent = originalText;
+        button.disabled = false;
+      }, 2000);
+    }
+
+    // Show subscription success
+    function showSubscriptionSuccess(plan) {
+      const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
+      const alert = document.createElement('div');
+      alert.className = 'success-alert';
+      alert.innerHTML = `
+        <div class="success-content">
+          <span class="success-icon">🎉</span>
+          <span>Successfully upgraded to ${planName} plan!</span>
+          <button onclick="this.parentElement.parentElement.remove()">×</button>
+        </div>
+      `;
+      document.body.appendChild(alert);
+      
+      setTimeout(() => {
+        if (alert.parentElement) alert.remove();
+      }, 5000);
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('📄 DOM loaded, initializing complete dashboard...');
+      console.log('📄 DOM loaded, initializing complete dashboard with subscription...');
       
       // Hide loading screen immediately
       document.getElementById('loadingScreen').style.display = 'none';
+      
+      // Initialize subscription features
+      updateSubscriptionBadge();
+      updateFeatureAccess();
       
       // Update time
       function updateTime() {
@@ -420,7 +712,7 @@
       updateTime();
       setInterval(updateTime, 60000);
 
-      // Setup navigation
+      // Setup navigation with premium checks
       function setupNavigation() {
         const navButtons = document.querySelectorAll('.nav-btn');
         const sections = document.querySelectorAll('.panel');
@@ -428,6 +720,19 @@
         navButtons.forEach(btn => {
           btn.addEventListener('click', function() {
             const target = this.getAttribute('data-target');
+            
+            // Check premium access for restricted sections
+            if (this.classList.contains('premium-required')) {
+              if (target === 'crop-health' && !hasAccess('crop-health')) {
+                showUpgradeModal('pro');
+                return;
+              }
+              if ((target === 'reports' || target === 'predictions') && !hasAccess('reports')) {
+                showUpgradeModal('premium');
+                return;
+              }
+            }
+            
             console.log('🔘 Navigation:', target);
             
             navButtons.forEach(b => b.classList.remove('active'));
@@ -445,321 +750,395 @@
       }
       setupNavigation();
 
-      // Setup action buttons
+      // Setup action buttons with premium checks
       document.getElementById('quickIrrigateBtn').onclick = () => alert('💧 Irrigation system activated!');
       document.getElementById('viewAlertsBtn').onclick = () => document.querySelector('[data-target="dashboard"]').click();
-      document.getElementById('exportDataBtn').onclick = () => alert('📥 Exporting dashboard data...');
       document.getElementById('refreshBtn').onclick = () => location.reload();
 
-      // Load real data function
-      function loadCompleteData() {
-        console.log('📡 Loading complete dashboard data...');
-        
-        fetch('/api/current-data')
-          .then(response => response.json())
-          .then(data => {
-            console.log('✅ Complete data received:', data);
-            populateCompleteDashboard(data);
-          })
-          .catch(error => {
-            console.log('⚠️ API failed, loading complete demo data');
-            loadCompleteDemoData();
-          });
+      // Close modal when clicking outside
+      window.onclick = function(event) {
+        const modal = document.getElementById('upgradeModal');
+        if (event.target === modal) {
+          closeUpgradeModal();
+        }
       }
 
-      function populateCompleteDashboard(data) {
-        // Overview Cards
-        if (data.weather) {
-          document.getElementById('overviewTemp').textContent = `${Math.round(data.weather.temperature)}°C`;
-          document.getElementById('overviewTempStatus').textContent = 
-            data.weather.temperature > 30 ? 'Hot' : 
-            data.weather.temperature < 15 ? 'Cold' : 'Optimal';
-        }
-        
-        if (data.soil) {
-          document.getElementById('overviewMoisture').textContent = `${data.soil.moisture.toFixed(1)}%`;
-          document.getElementById('overviewMoistureStatus').textContent = 
-            data.soil.moisture < 30 ? 'Low' : data.soil.moisture > 70 ? 'High' : 'Good';
-        }
-        
-        if (data.cropHealth) {
-          document.getElementById('overviewHealth').textContent = `${Math.round(data.cropHealth.score)}%`;
-          document.getElementById('overviewHealthStatus').textContent = 
-            data.cropHealth.score >= 80 ? 'Excellent' : data.cropHealth.score >= 60 ? 'Good' : 'Fair';
-        }
-        
-        if (data.yieldPrediction) {
-          document.getElementById('overviewYield').textContent = `${data.yieldPrediction.perHectare} kg/ha`;
-          document.getElementById('overviewYieldStatus').textContent = `${data.yieldPrediction.confidence}% confidence`;
-        }
+      // Load data and continue with existing functionality...
+      loadCompleteData();
+      setInterval(loadCompleteData, 120000);
+      
+      console.log('✅ Complete Smart Farming Dashboard with Subscription loaded successfully!');
+    });
 
-        // Location and Status
-        if (data.location) {
-          document.getElementById('locationName').textContent = data.location.city;
-        }
-        document.getElementById('connectionStatus').textContent = 'Connected';
-        document.getElementById('connectionStatus').className = 'connection-status connected';
-
-        // Populate ALL Sections
-        populateAllSectionsComplete(data);
-      }
-
-      function populateAllSectionsComplete(data) {
-        // Sensors Section
-        if (data.weather && data.soil) {
-          document.getElementById('sensorTemp').textContent = `${Math.round(data.weather.temperature)}°C`;
-          document.getElementById('sensorMoisture').textContent = `${data.soil.moisture.toFixed(1)}%`;
-          document.getElementById('sensorHumidity').textContent = `${data.weather.humidity}%`;
-          document.getElementById('sensorPH').textContent = data.soil.ph.toFixed(2);
-          
-          // Trends
-          document.getElementById('sensorTempTrend').textContent = '+2.1';
-          document.getElementById('sensorTempTrend').className = 'sensor-trend up';
-          document.getElementById('sensorMoistureTrend').textContent = 'Stable';
-          document.getElementById('sensorMoistureTrend').className = 'sensor-trend stable';
-          document.getElementById('sensorHumidityTrend').textContent = '+5';
-          document.getElementById('sensorHumidityTrend').className = 'sensor-trend up';
-          document.getElementById('sensorPHTrend').textContent = 'Stable';
-          document.getElementById('sensorPHTrend').className = 'sensor-trend stable';
-        }
-
-        // Weather Section
-        if (data.weather) {
-          document.getElementById('currentTemp').textContent = `${Math.round(data.weather.temperature)}°C`;
-          document.getElementById('weatherDesc').textContent = data.weather.description;
-          document.getElementById('windSpeed').textContent = data.weather.windSpeed.toFixed(1);
-          document.getElementById('visibility').textContent = data.weather.visibility.toFixed(1);
-          document.getElementById('uvIndex').textContent = data.weather.uvIndex;
-          document.getElementById('currentWeatherIcon').textContent = getWeatherIcon(data.weather.description);
-          
-          // 7-Day Forecast
-          populateWeatherForecast(data);
-        }
-
-        // Irrigation Section
-        if (data.soil) {
-          document.getElementById('irrigationSoilMoisture').textContent = `${data.soil.moisture.toFixed(1)}%`;
-          document.getElementById('irrigationStatus').textContent = 
-            data.soil.moisture < 25 ? 'Irrigation Required' : 
-            data.soil.moisture < 40 ? 'Monitor Closely' : 'Optimal Level';
-          
-          // Irrigation recommendations
-          document.getElementById('irrigationRecommendations').innerHTML = `
-            <div class="recommendation-card priority-medium">
-              <div class="rec-type">IRRIGATION</div>
-              <div class="rec-message">Soil moisture at ${data.soil.moisture.toFixed(1)}% - within acceptable range</div>
-              <div class="rec-action">Next irrigation recommended in 2-3 days based on weather forecast</div>
-            </div>
-          `;
-        }
-
-        // Fertilizer Section
-        if (data.soil) {
-          ['nitrogen', 'phosphorus', 'potassium'].forEach(nutrient => {
-            const value = data.soil[nutrient] || (Math.random() * 40 + 40);
-            const fill = document.getElementById(`${nutrient}Fill`);
-            const valueEl = document.getElementById(`${nutrient}Value`);
-            if (fill) fill.style.width = `${value}%`;
-            if (valueEl) valueEl.textContent = `${Math.round(value)}%`;
-          });
-          
-          document.getElementById('fertilizerRecommendations').innerHTML = `
-            <div class="recommendation-card priority-low">
-              <div class="rec-type">NUTRIENT STATUS</div>
-              <div class="rec-message">Current nutrient levels are balanced</div>
-              <div class="rec-action">Continue regular fertilization schedule</div>
-            </div>
-          `;
-        }
-
-        // Crop Health Section
-        if (data.cropHealth) {
-          document.getElementById('healthScoreValue').textContent = `${Math.round(data.cropHealth.score)}%`;
-          document.getElementById('healthStatus').textContent = 
-            data.cropHealth.score >= 80 ? 'Excellent' : data.cropHealth.score >= 60 ? 'Good' : 'Fair';
-          document.getElementById('growthStage').textContent = data.cropHealth.growthStage || 'Vegetative Growth';
-          document.getElementById('daysFromPlanting').textContent = `${data.cropHealth.daysFromPlanting || 45} days`;
-          document.getElementById('expectedHarvest').textContent = `${data.cropHealth.expectedHarvest || 75} days`;
-          
-          // Health factors
-          document.getElementById('healthFactors').innerHTML = `
-            <div class="factor-card optimal">
-              <h4>Temperature</h4>
-              <div class="factor-value">${Math.round(data.weather.temperature)}°C</div>
-              <div class="factor-status">optimal</div>
-            </div>
-            <div class="factor-card optimal">
-              <h4>Soil Moisture</h4>
-              <div class="factor-value">${data.soil.moisture.toFixed(1)}%</div>
-              <div class="factor-status">good</div>
-            </div>
-            <div class="factor-card optimal">
-              <h4>pH Level</h4>
-              <div class="factor-value">${data.soil.ph.toFixed(1)}</div>
-              <div class="factor-status">optimal</div>
-            </div>
-            <div class="factor-card warning">
-              <h4>Humidity</h4>
-              <div class="factor-value">${data.weather.humidity}%</div>
-              <div class="factor-status">moderate</div>
-            </div>
-          `;
-        }
-
-        // Reports Section
-        document.getElementById('avgMoisture').textContent = `${data.soil?.moisture.toFixed(1) || '42.3'}%`;
-        document.getElementById('irrigationEfficiency').textContent = '92%';
-        document.getElementById('nutrientBalance').textContent = 'Excellent';
-
-        // Predictions Section
-        if (data.yieldPrediction) {
-          document.getElementById('yieldPredictionValue').textContent = `${data.yieldPrediction.perHectare} kg/ha`;
-          document.getElementById('yieldConfidence').textContent = `${data.yieldPrediction.confidence}%`;
-          
-          // Yield factors
-          document.getElementById('yieldFactors').innerHTML = Object.entries(data.yieldPrediction.factors)
-            .map(([key, value]) => `
-              <div class="factor-item">
-                <span>${key.charAt(0).toUpperCase() + key.slice(1)}:</span>
-                <span>${value}%</span>
-              </div>
-            `).join('');
-        }
-
-        // Weather Impact
-        document.getElementById('weatherImpact').innerHTML = `
-          <div class="impact-summary">
-            <h4>Overall Impact: ${data.weather.temperature > 30 ? 'Challenging' : 'Positive'}</h4>
-            <p>Current weather conditions in ${data.location?.city || 'your area'} ${data.weather.temperature > 30 ? 'require careful monitoring due to high temperatures' : 'are favorable for crop growth'}.</p>
-          </div>
-          <div class="impact-factors">
-            <div class="impact-factor">
-              <span class="factor-name">Temperature (${Math.round(data.weather.temperature)}°C):</span>
-              <span class="factor-impact ${data.weather.temperature > 30 ? 'negative' : 'positive'}">${data.weather.temperature > 30 ? 'High' : 'Good'}</span>
-            </div>
-            <div class="impact-factor">
-              <span class="factor-name">Humidity (${data.weather.humidity}%):</span>
-              <span class="factor-impact neutral">Moderate</span>
-            </div>
-            <div class="impact-factor">
-              <span class="factor-name">Soil Moisture:</span>
-              <span class="factor-impact positive">Good</span>
-            </div>
-          </div>
-        `;
-
-        // AI Recommendations
-        let recommendations = [];
-        
-        if (data.weather?.temperature > 30) {
-          recommendations.push({
-            icon: '🌡️',
-            title: 'Heat Stress Management',
-            description: `Temperature at ${Math.round(data.weather.temperature)}°C is high. Consider shade nets or increased irrigation frequency during peak hours.`,
-            priority: 'High'
-          });
-        }
-        
-        if (data.cropHealth?.score > 80) {
-          recommendations.push({
-            icon: '🤖',
-            title: 'Maintain Excellence',
-            description: `Crop health is excellent at ${Math.round(data.cropHealth.score)}%. Continue current management practices.`,
-            priority: 'Low'
-          });
-        }
-        
-        if (data.soil?.moisture < 40) {
-          recommendations.push({
-            icon: '💧',
-            title: 'Smart Irrigation',
-            description: `Soil moisture at ${data.soil.moisture.toFixed(1)}%. Monitor closely and irrigate within 24-48 hours.`,
-            priority: 'Medium'
-          });
-        }
-        
-        recommendations.push({
-          icon: '📈',
-          title: 'Yield Optimization',
-          description: `Based on current conditions, predicted yield is ${data.yieldPrediction?.perHectare || 4200} kg/ha.`,
-          priority: 'Low'
+    // Continue with your existing loadCompleteData function...
+    function loadCompleteData() {
+      console.log('📡 Loading complete dashboard data...');
+      
+      fetch('/api/current-data')
+        .then(response => response.json())
+        .then(data => {
+          console.log('✅ Complete data received:', data);
+          populateCompleteDashboard(data);
+        })
+        .catch(error => {
+          console.log('⚠️ API failed, loading complete demo data');
+          loadCompleteDemoData();
         });
+    }
 
-        document.getElementById('aiRecommendations').innerHTML = recommendations.map(rec => `
-          <div class="ai-recommendation">
-            <div class="ai-rec-header">
-              <span class="ai-rec-icon">${rec.icon}</span>
-              <strong>${rec.title}</strong>
-            </div>
-            <p>${rec.description}</p>
-            <div class="ai-rec-priority">Priority: ${rec.priority}</div>
-          </div>
-        `).join('');
+    // Include all your existing functions (populateCompleteDashboard, etc.)...
+    // Missing Functions - Add these to complete your code:
 
-        // Initialize Charts
-        setTimeout(() => {
-          initializeAllCharts(data);
-        }, 1000);
+function loadCompleteDemoData() {
+  const demoData = {
+    weather: {
+      temperature: 31.1,
+      humidity: 65,
+      pressure: 1013,
+      windSpeed: 3.6,
+      visibility: 4.5,
+      uvIndex: 1,
+      description: "haze"
+    },
+    soil: {
+      moisture: 33.2,
+      ph: 6.8,
+      nitrogen: 68,
+      phosphorus: 45,
+      potassium: 72
+    },
+    cropHealth: {
+      score: 88,
+      growthStage: "Vegetative Growth",
+      daysFromPlanting: 45,
+      expectedHarvest: 75,
+      factors: {}
+    },
+    yieldPrediction: {
+      perHectare: 5175,
+      confidence: 92,
+      factors: {
+        health: 88,
+        weather: 85,
+        soil: 95
       }
+    },
+    location: {
+      city: "Delhi"
+    }
+  };
+  
+  populateCompleteDashboard(demoData);
+}
 
-      function populateWeatherForecast(data) {
-        // Get real forecast or use fallback
-        fetch('/api/forecast')
-          .then(response => response.json())
-          .then(forecastData => {
-            const forecast = forecastData.forecast || generateFallbackForecast();
-            document.getElementById('forecastContainer').innerHTML = forecast.slice(0, 7).map(day => `
-              <div class="forecast-card">
-                <div class="forecast-day">${day.date}</div>
-                <div class="forecast-icon">${getWeatherIcon(day.description)}</div>
-                <div class="forecast-temp">${day.temperature.max}°/${day.temperature.min}°</div>
-                <div class="forecast-rain">${day.rainfall}mm</div>
-              </div>
-            `).join('');
-          })
-          .catch(() => {
-            const forecast = generateFallbackForecast();
-            document.getElementById('forecastContainer').innerHTML = forecast.map(day => `
-              <div class="forecast-card">
-                <div class="forecast-day">${day.date}</div>
-                <div class="forecast-icon">${day.icon}</div>
-                <div class="forecast-temp">${day.temp}</div>
-                <div class="forecast-rain">${day.rain}</div>
-              </div>
-            `).join('');
-          });
-      }
+function populateCompleteDashboard(data) {
+  // Overview Cards
+  if (data.weather) {
+    document.getElementById('overviewTemp').textContent = Math.round(data.weather.temperature) + '°C';
+    document.getElementById('overviewTempStatus').textContent = 
+      data.weather.temperature > 30 ? 'Hot' : data.weather.temperature < 15 ? 'Cold' : 'Optimal';
+  }
+  
+  if (data.soil) {
+    document.getElementById('overviewMoisture').textContent = data.soil.moisture.toFixed(1) + '%';
+    document.getElementById('overviewMoistureStatus').textContent = 
+      data.soil.moisture < 30 ? 'Low' : data.soil.moisture > 70 ? 'High' : 'Good';
+  }
+  
+  if (data.cropHealth && hasAccess('dashboard-health')) {
+    document.getElementById('overviewHealth').textContent = Math.round(data.cropHealth.score) + '%';
+    document.getElementById('overviewHealthStatus').textContent = 
+      data.cropHealth.score > 80 ? 'Excellent' : data.cropHealth.score > 60 ? 'Good' : 'Fair';
+  }
+  
+  if (data.yieldPrediction && hasAccess('dashboard-yield')) {
+    document.getElementById('overviewYield').textContent = data.yieldPrediction.perHectare + ' kg/ha';
+    document.getElementById('overviewYieldStatus').textContent = data.yieldPrediction.confidence + '% confidence';
+  }
+  
+  // Location and Status
+  if (data.location) {
+    document.getElementById('locationName').textContent = data.location.city;
+    document.getElementById('connectionStatus').textContent = 'Connected';
+    document.getElementById('connectionStatus').className = 'connection-status connected';
+  }
+  
+  // Populate ALL Sections
+  populateAllSectionsComplete(data);
+}
 
-      function generateFallbackForecast() {
-        return [
-          { date: 'Mon', icon: '☀️', temp: '32°/24°', rain: '0mm' },
-          { date: 'Tue', icon: '🌤️', temp: '29°/22°', rain: '2mm' },
-          { date: 'Wed', icon: '⛅', temp: '28°/21°', rain: '5mm' },
-          { date: 'Thu', icon: '🌦️', temp: '26°/20°', rain: '8mm' },
-          { date: 'Fri', icon: '☀️', temp: '30°/23°', rain: '0mm' },
-          { date: 'Sat', icon: '🌤️', temp: '31°/24°', rain: '1mm' },
-          { date: 'Sun', icon: '☀️', temp: '33°/25°', rain: '0mm' }
-        ];
-      }
+function populateAllSectionsComplete(data) {
+  // Sensors Section
+  if (data.weather && data.soil) {
+    document.getElementById('sensorTemp').textContent = Math.round(data.weather.temperature) + '°C';
+    document.getElementById('sensorMoisture').textContent = data.soil.moisture.toFixed(1) + '%';
+    
+    if (hasAccess('sensors-advanced')) {
+      document.getElementById('sensorHumidity').textContent = data.weather.humidity + '%';
+      document.getElementById('sensorPH').textContent = data.soil.ph.toFixed(2);
+    }
+    
+    // Trends
+    document.getElementById('sensorTempTrend').textContent = '↑ 2.1°';
+    document.getElementById('sensorTempTrend').className = 'sensor-trend up';
+    document.getElementById('sensorMoistureTrend').textContent = 'Stable';
+    document.getElementById('sensorMoistureTrend').className = 'sensor-trend stable';
+    
+    if (hasAccess('sensors-advanced')) {
+      document.getElementById('sensorHumidityTrend').textContent = '↑ 5%';
+      document.getElementById('sensorHumidityTrend').className = 'sensor-trend up';
+      document.getElementById('sensorPHTrend').textContent = 'Stable';
+      document.getElementById('sensorPHTrend').className = 'sensor-trend stable';
+    }
+  }
+  
+  // Weather Section
+  if (data.weather) {
+    document.getElementById('currentTemp').textContent = Math.round(data.weather.temperature) + '°C';
+    document.getElementById('weatherDesc').textContent = data.weather.description;
+    document.getElementById('windSpeed').textContent = data.weather.windSpeed.toFixed(1);
+    document.getElementById('visibility').textContent = data.weather.visibility.toFixed(1);
+    document.getElementById('uvIndex').textContent = data.weather.uvIndex;
+    document.getElementById('currentWeatherIcon').textContent = getWeatherIcon(data.weather.description);
+    
+    // 7-Day Forecast
+    populateWeatherForecast(data);
+  }
+  
+  // Irrigation Section
+  if (data.soil) {
+    document.getElementById('irrigationSoilMoisture').textContent = data.soil.moisture.toFixed(1) + '%';
+    document.getElementById('irrigationStatus').textContent = 
+      data.soil.moisture < 25 ? 'Irrigation Required' : 
+      data.soil.moisture < 40 ? 'Monitor Closely' : 'Optimal Level';
+    
+    // Irrigation recommendations
+    document.getElementById('irrigationRecommendations').innerHTML = `
+      <div class="recommendation-card priority-medium">
+        <div class="rec-type">IRRIGATION</div>
+        <div class="rec-message">Soil moisture at ${data.soil.moisture.toFixed(1)}% - within acceptable range</div>
+        <div class="rec-action">Next irrigation recommended in 2-3 days based on weather forecast</div>
+      </div>
+    `;
+  }
+  
+  // Fertilizer Section
+  if (data.soil) {
+    ['nitrogen', 'phosphorus', 'potassium'].forEach(nutrient => {
+      const value = data.soil[nutrient] || Math.random() * 40 + 40;
+      const fill = document.getElementById(`${nutrient}Fill`);
+      const valueEl = document.getElementById(`${nutrient}Value`);
+      
+      if (fill) fill.style.width = value + '%';
+      if (valueEl) valueEl.textContent = Math.round(value) + '%';
+    });
+    
+    document.getElementById('fertilizerRecommendations').innerHTML = `
+      <div class="recommendation-card priority-low">
+        <div class="rec-type">NUTRIENT STATUS</div>
+        <div class="rec-message">Current nutrient levels are balanced</div>
+        <div class="rec-action">Continue regular fertilization schedule</div>
+      </div>
+    `;
+  }
+  
+  // Crop Health Section (Premium Feature)
+  if (data.cropHealth && hasAccess('crop-health')) {
+    document.getElementById('healthScoreValue').textContent = Math.round(data.cropHealth.score) + '%';
+    document.getElementById('healthStatus').textContent = 
+      data.cropHealth.score > 80 ? 'Excellent' : data.cropHealth.score > 60 ? 'Good' : 'Fair';
+    document.getElementById('growthStage').textContent = data.cropHealth.growthStage || 'Vegetative Growth';
+    document.getElementById('daysFromPlanting').textContent = (data.cropHealth.daysFromPlanting || 45) + ' days';
+    document.getElementById('expectedHarvest').textContent = (data.cropHealth.expectedHarvest || 75) + ' days';
+    
+    // Health factors
+    document.getElementById('healthFactors').innerHTML = `
+      <div class="factor-card optimal">
+        <h4>Temperature</h4>
+        <div class="factor-value">${Math.round(data.weather.temperature)}°C</div>
+        <div class="factor-status">optimal</div>
+      </div>
+      <div class="factor-card optimal">
+        <h4>Soil Moisture</h4>
+        <div class="factor-value">${data.soil.moisture.toFixed(1)}%</div>
+        <div class="factor-status">good</div>
+      </div>
+      <div class="factor-card optimal">
+        <h4>pH Level</h4>
+        <div class="factor-value">${data.soil.ph.toFixed(1)}</div>
+        <div class="factor-status">optimal</div>
+      </div>
+      <div class="factor-card warning">
+        <h4>Humidity</h4>
+        <div class="factor-value">${data.weather.humidity}%</div>
+        <div class="factor-status">moderate</div>
+      </div>
+    `;
+  }
+  
+  // Reports Section (Premium Feature)
+  if (hasAccess('reports')) {
+    document.getElementById('avgMoisture').textContent = data.soil?.moisture.toFixed(1) + '%' || '42.3%';
+    document.getElementById('irrigationEfficiency').textContent = '92%';
+    document.getElementById('nutrientBalance').textContent = 'Excellent';
+  }
+  
+  // Predictions Section (Premium Feature)
+  if (data.yieldPrediction && hasAccess('predictions')) {
+    document.getElementById('yieldPredictionValue').textContent = data.yieldPrediction.perHectare + ' kg/ha';
+    document.getElementById('yieldConfidence').textContent = data.yieldPrediction.confidence + '%';
+    
+    // Yield factors
+    document.getElementById('yieldFactors').innerHTML = Object.entries(data.yieldPrediction.factors)
+      .map(([key, value]) => `
+        <div class="factor-item">
+          <span>${key.charAt(0).toUpperCase() + key.slice(1)}</span>
+          <span>${value}%</span>
+        </div>
+      `).join('');
+  }
+  
+  // Weather Impact
+  document.getElementById('weatherImpact').innerHTML = `
+    <div class="impact-summary">
+      <h4>Overall Impact: ${data.weather.temperature > 30 ? 'Challenging' : 'Positive'}</h4>
+      <p>Current weather conditions in ${data.location?.city || 'your area'} ${data.weather.temperature > 30 ? 'require careful monitoring due to high temperatures' : 'are favorable for crop growth'}.</p>
+    </div>
+    <div class="impact-factors">
+      <div class="impact-factor">
+        <span class="factor-name">Temperature: ${Math.round(data.weather.temperature)}°C</span>
+        <span class="factor-impact ${data.weather.temperature > 30 ? 'negative' : 'positive'}">${data.weather.temperature > 30 ? 'High' : 'Good'}</span>
+      </div>
+      <div class="impact-factor">
+        <span class="factor-name">Humidity: ${data.weather.humidity}%</span>
+        <span class="factor-impact neutral">Moderate</span>
+      </div>
+      <div class="impact-factor">
+        <span class="factor-name">Soil Moisture</span>
+        <span class="factor-impact positive">Good</span>
+      </div>
+    </div>
+  `;
+  
+  // AI Recommendations
+  let recommendations = [];
+  
+  if (data.weather?.temperature > 30) {
+    recommendations.push({
+      icon: '🌡️',
+      title: 'Heat Stress Management',
+      description: `Temperature at ${Math.round(data.weather.temperature)}°C is high. Consider shade nets or increased irrigation frequency during peak hours.`,
+      priority: 'High'
+    });
+  }
+  
+  if (data.cropHealth?.score > 80) {
+    recommendations.push({
+      icon: '🌱',
+      title: 'Maintain Excellence',
+      description: `Crop health is excellent at ${Math.round(data.cropHealth.score)}%. Continue current management practices.`,
+      priority: 'Low'
+    });
+  }
+  
+  if (data.soil?.moisture < 40) {
+    recommendations.push({
+      icon: '💧',
+      title: 'Smart Irrigation',
+      description: `Soil moisture at ${data.soil.moisture.toFixed(1)}%. Monitor closely and irrigate within 24-48 hours.`,
+      priority: 'Medium'
+    });
+  }
+  
+  recommendations.push({
+    icon: '📈',
+    title: 'Yield Optimization',
+    description: `Based on current conditions, predicted yield is ${data.yieldPrediction?.perHectare || 4200} kg/ha.`,
+    priority: 'Low'
+  });
+  
+  document.getElementById('aiRecommendations').innerHTML = recommendations.map(rec => `
+    <div class="ai-recommendation">
+      <div class="ai-rec-header">
+        <span class="ai-rec-icon">${rec.icon}</span>
+        <strong>${rec.title}</strong>
+      </div>
+      <p>${rec.description}</p>
+      <div class="ai-rec-priority">Priority: ${rec.priority}</div>
+    </div>
+  `).join('');
+  
+  // Initialize Charts
+  setTimeout(() => initializeAllCharts(data), 1000);
+}
 
-      function getWeatherIcon(description) {
-        const icons = {
-          'clear sky': '☀️', 'few clouds': '🌤️', 'scattered clouds': '⛅',
-          'broken clouds': '☁️', 'overcast clouds': '☁️', 'light rain': '🌦️',
-          'moderate rain': '🌧️', 'heavy rain': '⛈️', 'thunderstorm': '⛈️',
-          'snow': '❄️', 'mist': '🌫️', 'haze': '🌫️', 'partly cloudy': '⛅'
-        };
-        return icons[description] || '🌤️';
-      }
+function populateWeatherForecast(data) {
+  // Get real forecast or use fallback
+  fetch('/api/forecast')
+    .then(response => response.json())
+    .then(forecastData => {
+      const forecast = forecastData.forecast || generateFallbackForecast();
+      document.getElementById('forecastContainer').innerHTML = forecast.slice(0, 7).map(day => `
+        <div class="forecast-card">
+          <div class="forecast-day">${day.date}</div>
+          <div class="forecast-icon">${getWeatherIcon(day.description)}</div>
+          <div class="forecast-temp">${day.temperature.max}°/${day.temperature.min}°</div>
+          <div class="forecast-rain">${day.rainfall}mm</div>
+        </div>
+      `).join('');
+    })
+    .catch(() => {
+      const forecast = generateFallbackForecast();
+      document.getElementById('forecastContainer').innerHTML = forecast.map(day => `
+        <div class="forecast-card">
+          <div class="forecast-day">${day.date}</div>
+          <div class="forecast-icon">${day.icon}</div>
+          <div class="forecast-temp">${day.temp}</div>
+          <div class="forecast-rain">${day.rain}</div>
+        </div>
+      `).join('');
+    });
+}
 
-      function initializeAllCharts(data) {
+function generateFallbackForecast() {
+  return [
+    { date: 'Mon', icon: '☀️', temp: '32°/24°', rain: '0mm' },
+    { date: 'Tue', icon: '⛅', temp: '29°/22°', rain: '2mm' },
+    { date: 'Wed', icon: '🌧️', temp: '28°/21°', rain: '5mm' },
+    { date: 'Thu', icon: '🌦️', temp: '26°/20°', rain: '8mm' },
+    { date: 'Fri', icon: '☀️', temp: '30°/23°', rain: '0mm' },
+    { date: 'Sat', icon: '⛅', temp: '31°/24°', rain: '1mm' },
+    { date: 'Sun', icon: '☀️', temp: '33°/25°', rain: '0mm' }
+  ];
+}
+
+function getWeatherIcon(description) {
+  const icons = {
+    'clear sky': '☀️',
+    'few clouds': '🌤️',
+    'scattered clouds': '⛅',
+    'broken clouds': '☁️',
+    'overcast clouds': '☁️',
+    'light rain': '🌦️',
+    'moderate rain': '🌧️',
+    'heavy rain': '⛈️',
+    'thunderstorm': '⛈️',
+    'snow': '🌨️',
+    'mist': '🌫️',
+    'haze': '🌫️',
+    'partly cloudy': '⛅'
+  };
+  return icons[description] || '🌤️';
+}
+
+function initializeAllCharts(data) {
   if (typeof Chart === 'undefined') {
     console.log('Charts not available');
     return;
   }
-
-  console.log('📊 Initializing all charts with proper sizing...');
-
+  
+  console.log('Initializing all charts with proper sizing...');
+  
   // Yield Progress Chart
   const yieldCtx = document.getElementById('yieldChart');
   if (yieldCtx) {
@@ -778,31 +1157,19 @@
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false, // This is key for proper sizing
+        maintainAspectRatio: false,
         plugins: {
-          legend: {
-            display: false
-          }
+          legend: { display: false }
         },
-        scales: { 
-          y: { 
-            min: 0, 
-            max: 100,
-            grid: {
-              display: true
-            }
-          },
-          x: {
-            grid: {
-              display: false
-            }
-          }
+        scales: {
+          y: { min: 0, max: 100, grid: { display: true } },
+          x: { grid: { display: false } }
         }
       }
     });
   }
-
-  // Cost Savings Chart - Smaller, more controlled
+  
+  // Cost Savings Chart
   const costCtx = document.getElementById('costSavingsChart');
   if (costCtx) {
     new Chart(costCtx.getContext('2d'), {
@@ -822,19 +1189,14 @@
         plugins: {
           legend: {
             position: 'bottom',
-            labels: {
-              boxWidth: 12,
-              font: {
-                size: 11
-              }
-            }
+            labels: { boxWidth: 12, font: { size: 11 } }
           }
         }
       }
     });
   }
-
-  // Water Usage Chart - Bar chart with controlled height
+  
+  // Water Usage Chart
   const waterCtx = document.getElementById('waterUsageChart');
   if (waterCtx) {
     new Chart(waterCtx.getContext('2d'), {
@@ -851,76 +1213,18 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          }
-        },
+        plugins: { legend: { display: false } },
         scales: {
-          y: {
-            beginAtZero: true,
-            grid: {
-              display: true
-            }
-          },
-          x: {
-            grid: {
-              display: false
-            }
-          }
+          y: { beginAtZero: true, grid: { display: true } },
+          x: { grid: { display: false } }
         }
       }
     });
   }
-
-  console.log('✅ All charts initialized with proper sizing');
+  
+  console.log('All charts initialized with proper sizing');
 }
 
-
-      function loadCompleteDemoData() {
-        const demoData = {
-          weather: {
-            temperature: 31.1,
-            humidity: 65,
-            pressure: 1013,
-            windSpeed: 3.6,
-            visibility: 4.5,
-            uvIndex: 1,
-            description: 'haze'
-          },
-          soil: {
-            moisture: 33.2,
-            ph: 6.8,
-            nitrogen: 68,
-            phosphorus: 45,
-            potassium: 72
-          },
-          cropHealth: {
-            score: 100,
-            growthStage: 'Vegetative Growth',
-            daysFromPlanting: 45,
-            expectedHarvest: 75,
-            factors: {}
-          },
-          yieldPrediction: {
-            perHectare: 5175,
-            confidence: 100,
-            factors: { health: 100, weather: 85, soil: 95 }
-          },
-          location: { city: 'Delhi' }
-        };
-        
-        populateCompleteDashboard(demoData);
-      }
-
-      // Load data immediately
-      loadCompleteData();
-      
-      // Refresh every 2 minutes
-      setInterval(loadCompleteData, 120000);
-      
-      console.log('✅ Complete Smart Farming Dashboard loaded successfully!');
-    });
   </script>
 </body>
 </html>
