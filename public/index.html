@@ -292,22 +292,93 @@
         </section>
 
         <!-- Crop Health Section - PREMIUM FEATURE -->
-        <section class="panel hidden premium-section" id="crop-health">
-          <div class="premium-section-overlay">
-            <div class="premium-section-content">
-              <div class="premium-icon">🔒</div>
-              <h2>🌿 Crop Health Analysis</h2>
-              <p>Get advanced crop health insights, disease detection, and growth optimization with our PRO plan.</p>
-              <div class="premium-features-list">
-                <div class="premium-feature-item">✓ Real-time health scoring</div>
-                <div class="premium-feature-item">✓ Disease early detection</div>
-                <div class="premium-feature-item">✓ Growth stage tracking</div>
-                <div class="premium-feature-item">✓ Personalized recommendations</div>
-              </div>
-              <button class="upgrade-btn-large" onclick="showUpgradeModal('pro')">Upgrade to PRO - ₹299/month</button>
-            </div>
+       <!-- Crop Health Section - Fixed with actual content -->
+<section class="panel hidden" id="crop-health">
+  <!-- Premium Overlay (shown for free users) -->
+  <div class="premium-section-overlay" style="display: flex;">
+    <div class="premium-section-content">
+      <div class="premium-icon">🔒</div>
+      <h2>🌿 Crop Health Analysis</h2>
+      <p>Get advanced crop health insights, disease detection, and growth optimization with our PRO plan.</p>
+      <div class="premium-features-list">
+        <div class="premium-feature-item">✓ Real-time health scoring</div>
+        <div class="premium-feature-item">✓ Disease early detection</div>
+        <div class="premium-feature-item">✓ Growth stage tracking</div>
+        <div class="premium-feature-item">✓ Personalized recommendations</div>
+      </div>
+      <button class="upgrade-btn-large" onclick="showUpgradeModal('pro')">Upgrade to PRO - ₹99/month</button>
+    </div>
+  </div>
+  
+  <!-- Actual Crop Health Content (shown for PRO/Premium users) -->
+  <div class="crop-health-content" style="display: none;">
+    <h2>🌿 Crop Health Analysis</h2>
+    
+    <div class="health-overview">
+      <div class="health-score-card">
+        <h3>Overall Health Score</h3>
+        <div class="health-score-display">
+          <div class="health-score-circle">
+            <canvas id="healthScoreChart" width="120" height="120"></canvas>
+            <div class="health-score-value" id="healthScoreValue">85%</div>
           </div>
-        </section>
+          <div class="health-status" id="healthStatus">Excellent</div>
+        </div>
+      </div>
+      
+      <div class="growth-info">
+        <div class="growth-metric">
+          <span>Growth Stage:</span>
+          <strong id="growthStage">Vegetative Growth</strong>
+        </div>
+        <div class="growth-metric">
+          <span>Days from Planting:</span>
+          <strong id="daysFromPlanting">45 days</strong>
+        </div>
+        <div class="growth-metric">
+          <span>Expected Harvest:</span>
+          <strong id="expectedHarvest">30 days</strong>
+        </div>
+      </div>
+    </div>
+    
+    <div class="health-factors">
+      <h3>Environmental Factors</h3>
+      <div class="factors-grid" id="healthFactors">
+        <div class="factor-card optimal">
+          <h4>Temperature</h4>
+          <div class="factor-value">25°C</div>
+          <div class="factor-status">Optimal</div>
+        </div>
+        <div class="factor-card optimal">
+          <h4>Soil Moisture</h4>
+          <div class="factor-value">45%</div>
+          <div class="factor-status">Good</div>
+        </div>
+        <div class="factor-card optimal">
+          <h4>pH Level</h4>
+          <div class="factor-value">6.8</div>
+          <div class="factor-status">Optimal</div>
+        </div>
+        <div class="factor-card warning">
+          <h4>Humidity</h4>
+          <div class="factor-value">65%</div>
+          <div class="factor-status">Moderate</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="health-recommendations">
+      <h3>Recommendations</h3>
+      <div class="recommendation-card priority-low">
+        <div class="rec-type">HEALTH STATUS</div>
+        <div class="rec-message">Crop health is excellent. Continue current management practices.</div>
+        <div class="rec-action">Monitor daily and maintain optimal conditions.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 
         <!-- Reports Section - PREMIUM FEATURE -->
         <section class="panel hidden premium-section" id="reports">
@@ -323,7 +394,7 @@
                 <div class="premium-feature-item">✓ Export to PDF/Excel</div>
                 <div class="premium-feature-item">✓ Multi-farm management</div>
               </div>
-              <button class="upgrade-btn-large" onclick="showUpgradeModal('premium')">Upgrade to PREMIUM - ₹599/month</button>
+              <button class="upgrade-btn-large" onclick="showUpgradeModal('premium')">Upgrade to PREMIUM - ₹199/month</button>
             </div>
           </div>
         </section>
@@ -342,7 +413,7 @@
                 <div class="premium-feature-item">✓ Personalized AI recommendations</div>
                 <div class="premium-feature-item">✓ Risk assessment models</div>
               </div>
-              <button class="upgrade-btn-large" onclick="showUpgradeModal('premium')">Upgrade to PREMIUM - ₹599/month</button>
+              <button class="upgrade-btn-large" onclick="showUpgradeModal('premium')">Upgrade to PREMIUM - ₹199/month</button>
             </div>
           </div>
         </section>
@@ -377,7 +448,7 @@
             <div class="pricing-card pro popular" id="proPlanCard">
               <div class="popular-badge">Most Popular</div>
               <h3>Pro</h3>
-              <div class="price">₹299<span>/month</span></div>
+              <div class="price">₹99<span>/month</span></div>
               <div class="plan-description">Advanced monitoring with crop health insights</div>
               <ul class="features-list">
                 <li class="included">✓ All Free features</li>
@@ -396,7 +467,7 @@
             <div class="pricing-card premium enterprise" id="premiumPlanCard">
               <div class="enterprise-badge">Enterprise</div>
               <h3>Premium</h3>
-              <div class="price">₹599<span>/month</span></div>
+              <div class="price">₹199<span>/month</span></div>
               <div class="plan-description">Complete farm analytics with AI insights</div>
               <ul class="features-list">
                 <li class="included">✓ All Pro features</li>
@@ -583,7 +654,7 @@
                 <h3>Pro Plan</h3>
                 ${suggestedPlan === 'pro' ? '<div class="recommended-badge">Recommended</div>' : ''}
               </div>
-              <div class="modal-plan-price">₹299/month</div>
+              <div class="modal-plan-price">₹99/month</div>
               <ul class="modal-plan-features">
                 <li>✓ Advanced sensors (pH, Humidity)</li>
                 <li>✓ Crop health analysis</li>
@@ -598,7 +669,7 @@
                 <h3>Premium Plan</h3>
                 ${suggestedPlan === 'premium' ? '<div class="recommended-badge">Recommended</div>' : ''}
               </div>
-              <div class="modal-plan-price">₹599/month</div>
+              <div class="modal-plan-price">₹199/month</div>
               <ul class="modal-plan-features">
                 <li>✓ Everything in Pro</li>
                 <li>✓ AI yield predictions</li>
