@@ -114,81 +114,204 @@ class SmartFarmingDashboard {
     return this.planFeatures[this.currentPlan].includes(feature);
   }
 
- updateFeatureAccess() {
-  // Update plan cards
-  document.querySelectorAll('.pricing-card').forEach(card => {
-    card.classList.remove('current');
-    const button = card.querySelector('.plan-btn');
-    if (button) {
-      button.disabled = false;
-      button.textContent = card.id === 'freePlanCard' ? 'Downgrade to Free' : 
-                         card.id === 'proPlanCard' ? 'Upgrade to Pro' : 'Upgrade to Premium';
-    }
-  });
+  // FIXED: Proper feature access update method
+  updateFeatureAccess() {
+    console.log('🔄 Updating feature access for plan:', this.currentPlan);
+    
+    // Update plan cards
+    document.querySelectorAll('.pricing-card').forEach(card => {
+      card.classList.remove('current');
+      const button = card.querySelector('.plan-btn');
+      if (button) {
+        button.disabled = false;
+        button.textContent = card.id === 'freePlanCard' ? 'Downgrade to Free' : 
+                           card.id === 'proPlanCard' ? 'Upgrade to Pro' : 'Upgrade to Premium';
+      }
+    });
 
-  const currentCard = document.getElementById(`${this.currentPlan}PlanCard`);
-  if (currentCard) {
-    currentCard.classList.add('current');
-    const button = currentCard.querySelector('.plan-btn');
-    if (button) {
-      button.disabled = true;
-      button.textContent = 'Current Plan';
+    const currentCard = document.getElementById(`${this.currentPlan}PlanCard`);
+    if (currentCard) {
+      currentCard.classList.add('current');
+      const button = currentCard.querySelector('.plan-btn');
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Current Plan';
+      }
+    }
+
+    // FIXED: Handle Crop Health section specifically
+    this.updatePremiumSection('crop-health', 'crop-health');
+    this.updatePremiumSection('reports', 'reports');
+    this.updatePremiumSection('predictions', 'predictions');
+
+    // Update navigation buttons
+    document.querySelectorAll('.nav-btn.premium-required').forEach(btn => {
+      const target = btn.getAttribute('data-target');
+      if (target === 'crop-health' && this.hasAccess('crop-health')) {
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+      } else if ((target === 'reports' || target === 'predictions') && this.hasAccess('reports')) {
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+      } else if (btn.classList.contains('premium-required')) {
+        btn.style.opacity = '0.6';
+        btn.style.pointerEvents = 'none';
+      }
+    });
+    
+    console.log('✅ Feature access updated');
+  }
+
+  // ADDED: Missing updatePremiumSection method
+  updatePremiumSection(sectionId, featureKey) {
+    const section = document.getElementById(sectionId);
+    if (!section) {
+      console.warn(`⚠️ Section ${sectionId} not found`);
+      return;
+    }
+    
+    const overlay = section.querySelector('.premium-section-overlay');
+    const content = section.querySelector('.crop-health-content, .reports-content, .predictions-content');
+    
+    if (this.hasAccess(featureKey)) {
+      console.log(`✅ Granting access to ${sectionId}`);
+      // Hide overlay and show content
+      if (overlay) {
+        overlay.style.display = 'none';
+        console.log(`Hidden overlay for ${sectionId}`);
+      }
+      if (content) {
+        content.style.display = 'block';
+        console.log(`Showing content for ${sectionId}`);
+      } else {
+        console.warn(`⚠️ No content div found for ${sectionId} - creating basic content`);
+        this.createBasicContent(section, sectionId);
+      }
+      
+      // Remove premium-section class
+      section.classList.remove('premium-section');
+      
+      // Update data if available
+      if (this.data.current) {
+        if (sectionId === 'crop-health') {
+          this.updateCropHealthData(this.data.current);
+        } else if (sectionId === 'reports') {
+          this.updateReportsData(this.data.current);
+        } else if (sectionId === 'predictions') {
+          this.updatePredictionsData(this.data.current);
+        }
+      }
+    } else {
+      console.log(`❌ Denying access to ${sectionId}`);
+      // Show overlay and hide content
+      if (overlay) overlay.style.display = 'flex';
+      if (content) content.style.display = 'none';
+      section.classList.add('premium-section');
     }
   }
 
-  // FIXED: Hide/show premium overlays based on access
-  document.querySelectorAll('.premium-feature').forEach(feature => {
-    const overlay = feature.querySelector('.premium-overlay');
-    if (overlay) {
-      // Check specific feature access
-      let shouldHideOverlay = false;
-      
-      if (feature.id === 'crop-health' && this.hasAccess('crop-health')) {
-        shouldHideOverlay = true;
-      } else if (feature.classList.contains('sensors-advanced') && this.hasAccess('sensors-advanced')) {
-        shouldHideOverlay = true;
-      } else if (feature.classList.contains('dashboard-health') && this.hasAccess('dashboard-health')) {
-        shouldHideOverlay = true;
-      } else if (feature.classList.contains('dashboard-yield') && this.hasAccess('dashboard-yield')) {
-        shouldHideOverlay = true;
-      }
-      
-      overlay.style.display = shouldHideOverlay ? 'none' : 'flex';
+  // ADDED: Method to create basic content if missing
+  createBasicContent(section, sectionId) {
+    let contentHTML = '';
+    
+    if (sectionId === 'crop-health') {
+      contentHTML = `
+        <div class="crop-health-content" style="display: block;">
+          <div class="health-overview">
+            <div class="health-score-card">
+              <h3>🌿 Overall Health Score</h3>
+              <div class="health-score-display">
+                <div class="health-score-value" id="healthScoreValue">88%</div>
+                <div class="health-status" id="healthStatus">Excellent</div>
+              </div>
+            </div>
+            
+            <div class="growth-info">
+              <div class="growth-metric">
+                <span>Growth Stage:</span>
+                <strong id="growthStage">Vegetative Growth</strong>
+              </div>
+              <div class="growth-metric">
+                <span>Days from Planting:</span>
+                <strong id="daysFromPlanting">45 days</strong>
+              </div>
+              <div class="growth-metric">
+                <span>Expected Harvest:</span>
+                <strong id="expectedHarvest">30 days</strong>
+              </div>
+            </div>
+          </div>
+          
+          <div class="health-factors-section">
+            <h3>🌱 Environmental Factors</h3>
+            <div class="factors-grid" id="healthFactors">
+              <div class="factor-card optimal">
+                <h4>Temperature</h4>
+                <div class="factor-value">25°C</div>
+                <div class="factor-status">Optimal</div>
+              </div>
+              <div class="factor-card optimal">
+                <h4>Soil Moisture</h4>
+                <div class="factor-value">45%</div>
+                <div class="factor-status">Good</div>
+              </div>
+              <div class="factor-card optimal">
+                <h4>pH Level</h4>
+                <div class="factor-value">6.8</div>
+                <div class="factor-status">Optimal</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    } else if (sectionId === 'reports') {
+      contentHTML = `
+        <div class="reports-content" style="display: block;">
+          <h3>📊 Analytics Dashboard</h3>
+          <p>Comprehensive reports and analytics for your farm performance.</p>
+          <div class="report-metrics">
+            <div class="metric-card">
+              <h4>Average Soil Moisture</h4>
+              <div class="metric-value" id="avgMoisture">42.5%</div>
+            </div>
+            <div class="metric-card">
+              <h4>Irrigation Efficiency</h4>
+              <div class="metric-value" id="irrigationEfficiency">87%</div>
+            </div>
+          </div>
+        </div>
+      `;
+    } else if (sectionId === 'predictions') {
+      contentHTML = `
+        <div class="predictions-content" style="display: block;">
+          <h3>🔮 AI Predictions</h3>
+          <div class="prediction-cards">
+            <div class="prediction-card">
+              <h4>Yield Prediction</h4>
+              <div class="prediction-value" id="yieldPredictionValue">4200 kg/ha</div>
+              <div class="prediction-confidence" id="yieldConfidence">85% confidence</div>
+            </div>
+          </div>
+          <div class="ai-recommendations" id="aiRecommendations">
+            <div class="ai-recommendation">
+              <p>🤖 AI analysis shows optimal growing conditions</p>
+            </div>
+          </div>
+        </div>
+      `;
     }
-  });
-
-  // FIXED: Hide premium section overlays
-  document.querySelectorAll('.premium-section').forEach(section => {
+    
+    // Insert the content after the overlay
     const overlay = section.querySelector('.premium-section-overlay');
-    if (overlay) {
-      const sectionId = section.id;
-      
-      if ((sectionId === 'crop-health' && this.hasAccess('crop-health')) ||
-          (sectionId === 'reports' && this.hasAccess('reports')) ||
-          (sectionId === 'predictions' && this.hasAccess('predictions'))) {
-        overlay.style.display = 'none';
-      } else {
-        overlay.style.display = 'flex';
-      }
+    if (overlay && contentHTML) {
+      overlay.insertAdjacentHTML('afterend', contentHTML);
+      console.log(`✅ Created basic content for ${sectionId}`);
     }
-  });
+  }
 
-  // Update navigation buttons
-  document.querySelectorAll('.nav-btn.premium-required').forEach(btn => {
-    const target = btn.getAttribute('data-target');
-    if (target === 'crop-health' && !this.hasAccess('crop-health')) {
-      btn.style.opacity = '0.6';
-      btn.style.pointerEvents = 'none';
-    } else if ((target === 'reports' || target === 'predictions') && !this.hasAccess('reports')) {
-      btn.style.opacity = '0.6';
-      btn.style.pointerEvents = 'none';
-    } else {
-      btn.style.opacity = '1';
-      btn.style.pointerEvents = 'auto';
-    }
-  });
-}
-
+  // Keep all your existing methods here...
+  // [All your existing methods from the script should remain the same]
+  
   showUpgradeModal(suggestedPlan = 'pro') {
     const modal = document.getElementById('upgradeModal');
     const modalContent = document.getElementById('modalContent');
@@ -247,75 +370,46 @@ class SmartFarmingDashboard {
     modal.style.display = 'block';
   }
 
-  closeUpgradeModal() {
-    const modal = document.getElementById('upgradeModal');
-    if (modal) modal.style.display = 'none';
-  }
-
-  checkPremiumFeature(feature) {
-    if (feature === 'export' && !this.hasAccess('export-csv')) {
-      this.showUpgradeModal('pro');
-      return false;
-    }
-    if (feature === 'crop-health' && !this.hasAccess('crop-health')) {
-      this.showUpgradeModal('pro');
-      return false;
-    }
-    if ((feature === 'reports' || feature === 'predictions') && !this.hasAccess('reports')) {
-      this.showUpgradeModal('premium');
-      return false;
-    }
-    return true;
-  }
-
   subscribeToPlan(plan) {
-  // Show loading state
-  const buttons = document.querySelectorAll('.modal-plan-btn, .plan-btn');
-  buttons.forEach(button => {
-    if (button.textContent.toLowerCase().includes(plan.toLowerCase())) {
-      const originalText = button.textContent;
-      button.textContent = 'Processing...';
-      button.disabled = true;
-      
-      // Simulate payment process
-      setTimeout(() => {
-        // Simulate successful payment
-        this.currentPlan = plan;
-        this.updateSubscriptionBadge();
-        this.updateFeatureAccess();
+    console.log('💳 Subscribing to plan:', plan);
+    
+    // Show loading state
+    const buttons = document.querySelectorAll('.modal-plan-btn, .plan-btn');
+    buttons.forEach(button => {
+      if (button.textContent.toLowerCase().includes(plan.toLowerCase())) {
+        const originalText = button.textContent;
+        button.textContent = 'Processing...';
+        button.disabled = true;
         
-        // ADDED: Force refresh current section data
-        const activeSection = document.querySelector('.nav-btn.active');
-        if (activeSection) {
-          const target = activeSection.getAttribute('data-target');
-          this.handleSectionChange(target);
+        // Simulate payment process
+        setTimeout(() => {
+          // Update subscription
+          this.currentPlan = plan;
+          console.log('✅ Subscription updated to:', plan);
           
-          // If current data exists, update the section
-          if (this.data.current) {
-            if (target === 'crop-health' && this.hasAccess('crop-health')) {
-              this.updateCropHealthData(this.data.current);
-            }
-            if (target === 'reports' && this.hasAccess('reports')) {
-              this.updateReportsData(this.data.current);
-            }
-            if (target === 'predictions' && this.hasAccess('predictions')) {
-              this.updatePredictionsData(this.data.current);
-            }
+          // Update UI
+          this.updateSubscriptionBadge();
+          this.updateFeatureAccess();
+          
+          // Force refresh current section
+          const activeSection = document.querySelector('.nav-btn.active');
+          if (activeSection) {
+            const target = activeSection.getAttribute('data-target');
+            console.log('🔄 Refreshing section:', target);
+            this.handleSectionChange(target);
           }
-        }
-        
-        this.closeUpgradeModal();
-        
-        // Show success message
-        this.showSubscriptionSuccess(plan);
-        
-        // Restore button
-        button.textContent = originalText;
-        button.disabled = false;
-      }, 2000);
-    }
-  });
-}
+          
+          this.closeUpgradeModal();
+          this.showSubscriptionSuccess(plan);
+          
+          // Restore button
+          button.textContent = originalText;
+          button.disabled = false;
+        }, 2000);
+      }
+    });
+  }
+
 
 
   showSubscriptionSuccess(plan) {
@@ -2087,6 +2181,23 @@ window.exportData = function() {
     }
   } else {
     alert('Data export feature - would export current dashboard data as JSON/CSV');
+  }
+};
+window.showUpgradeModal = function(suggestedPlan = 'pro') {
+  if (window.dashboard) {
+    window.dashboard.showUpgradeModal(suggestedPlan);
+  }
+};
+
+window.closeUpgradeModal = function() {
+  if (window.dashboard) {
+    window.dashboard.closeUpgradeModal();
+  }
+};
+
+window.subscribeToPlan = function(plan) {
+  if (window.dashboard) {
+    window.dashboard.subscribeToPlan(plan);
   }
 };
 
