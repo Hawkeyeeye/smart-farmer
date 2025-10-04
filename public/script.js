@@ -313,62 +313,63 @@ class SmartFarmingDashboard {
   // [All your existing methods from the script should remain the same]
   
   showUpgradeModal(suggestedPlan = 'pro') {
-    const modal = document.getElementById('upgradeModal');
-    const modalContent = document.getElementById('modalContent');
-    
-    if (!modal || !modalContent) return;
-    
-    modalContent.innerHTML = `
-      <div class="upgrade-modal-content">
-        <h2>🚀 Upgrade Your Plan</h2>
-        <p>Unlock powerful features to maximize your farming potential!</p>
-        
-        <div class="modal-plans">
-          <div class="modal-plan ${suggestedPlan === 'pro' ? 'recommended' : ''}">
-            <div class="modal-plan-header">
-              <h3>Pro Plan</h3>
-              ${suggestedPlan === 'pro' ? '<div class="recommended-badge">Recommended</div>' : ''}
-            </div>
-            <div class="modal-plan-price">₹299/month</div>
-            <ul class="modal-plan-features">
-              <li>✓ Advanced sensors (pH, Humidity)</li>
-              <li>✓ Crop health analysis</li>
-              <li>✓ 30-day historical data</li>
-              <li>✓ Email/SMS alerts</li>
-            </ul>
-            <button class="modal-plan-btn" onclick="window.dashboard.subscribeToPlan('pro')">Choose Pro</button>
+  const modal = document.getElementById('upgradeModal');
+  const modalContent = document.getElementById('modalContent');
+  
+  if (!modal || !modalContent) return;
+  
+  modalContent.innerHTML = `
+    <div class="upgrade-modal-content">
+      <h2>🚀 Upgrade Your Plan</h2>
+      <p>Unlock powerful features to maximize your farming potential!</p>
+      
+      <div class="modal-plans">
+        <div class="modal-plan ${suggestedPlan === 'pro' ? 'recommended' : ''}">
+          <div class="modal-plan-header">
+            <h3>Pro Plan</h3>
+            ${suggestedPlan === 'pro' ? '<div class="recommended-badge">Recommended</div>' : ''}
           </div>
-          
-          <div class="modal-plan ${suggestedPlan === 'premium' ? 'recommended' : ''}">
-            <div class="modal-plan-header">
-              <h3>Premium Plan</h3>
-              ${suggestedPlan === 'premium' ? '<div class="recommended-badge">Recommended</div>' : ''}
-            </div>
-            <div class="modal-plan-price">₹599/month</div>
-            <ul class="modal-plan-features">
-              <li>✓ Everything in Pro</li>
-              <li>✓ AI yield predictions</li>
-              <li>✓ Advanced analytics</li>
-              <li>✓ Multi-farm management</li>
-            </ul>
-            <button class="modal-plan-btn premium" onclick="window.dashboard.subscribeToPlan('premium')">Choose Premium</button>
-          </div>
+          <div class="modal-plan-price">₹299/month</div>
+          <ul class="modal-plan-features">
+            <li>✓ Advanced sensors (pH, Humidity)</li>
+            <li>✓ Crop health analysis</li>
+            <li>✓ 30-day historical data</li>
+            <li>✓ Email/SMS alerts</li>
+          </ul>
+          <button class="modal-plan-btn" onclick="subscribeToPlan('pro')">Choose Pro</button>
         </div>
         
-        <div class="modal-benefits">
-          <h4>💡 What you'll get:</h4>
-          <div class="modal-benefit-items">
-            <div class="modal-benefit">📈 Increase yield by up to 25%</div>
-            <div class="modal-benefit">💰 Reduce costs by up to 30%</div>
-            <div class="modal-benefit">🤖 AI-powered recommendations</div>
-            <div class="modal-benefit">📱 Real-time alerts and notifications</div>
+        <div class="modal-plan ${suggestedPlan === 'premium' ? 'recommended' : ''}">
+          <div class="modal-plan-header">
+            <h3>Premium Plan</h3>
+            ${suggestedPlan === 'premium' ? '<div class="recommended-badge">Recommended</div>' : ''}
           </div>
+          <div class="modal-plan-price">₹599/month</div>
+          <ul class="modal-plan-features">
+            <li>✓ Everything in Pro</li>
+            <li>✓ AI yield predictions</li>
+            <li>✓ Advanced analytics</li>
+            <li>✓ Multi-farm management</li>
+          </ul>
+          <button class="modal-plan-btn premium" onclick="subscribeToPlan('premium')">Choose Premium</button>
         </div>
       </div>
-    `;
-    
-    modal.style.display = 'block';
-  }
+      
+      <div class="modal-benefits">
+        <h4>💡 What you'll get:</h4>
+        <div class="modal-benefit-items">
+          <div class="modal-benefit">📈 Increase yield by up to 25%</div>
+          <div class="modal-benefit">💰 Reduce costs by up to 30%</div>
+          <div class="modal-benefit">🤖 AI-powered recommendations</div>
+          <div class="modal-benefit">📱 Real-time alerts and notifications</div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  modal.style.display = 'block';
+}
+
 
   subscribeToPlan(plan) {
     console.log('💳 Subscribing to plan:', plan);
@@ -2195,11 +2196,16 @@ window.closeUpgradeModal = function() {
   }
 };
 
+// Replace the existing window.subscribeToPlan function with this:
 window.subscribeToPlan = function(plan) {
+  console.log('🔄 Global subscribeToPlan called with plan:', plan);
   if (window.dashboard) {
     window.dashboard.subscribeToPlan(plan);
+  } else {
+    console.error('❌ Dashboard not found!');
   }
 };
+
 
 // Initialize Dashboard when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
