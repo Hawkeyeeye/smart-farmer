@@ -1475,13 +1475,37 @@ body {
     max-height: 200px !important;
   }
 }
-/* Ensure premium overlays are properly hidden when access is granted */
-.premium-section-overlay[style*="display: none"],
-.premium-overlay[style*="display: none"] {
-  display: none !important;
+/* Fix for oversized crop health chart */
+#healthScoreChart {
+  max-width: 200px !important;
+  max-height: 200px !important;
+  width: 200px !important;
+  height: 200px !important;
 }
 
-/* Show actual content when premium overlay is hidden */
-.premium-section:not(:has(.premium-section-overlay[style*="display: flex"])) .panel-content {
-  display: block;
+.health-chart-container {
+  width: 250px;
+  height: 250px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+}
+
+/* Ensure report charts are visible */
+.chart-container canvas {
+  display: block !important;
+  max-height: 300px;
+}
+
+/* Overview cards fix */
+.overview-card .card-value {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.overview-card .card-status {
+  font-size: 1rem;
+  opacity: 0.8;
 }
