@@ -29,10 +29,10 @@ const CONFIG = {
   UPDATE_INTERVAL: 120000, // 2 minutes
   PORT: process.env.PORT || 3000,
   DEFAULT_LOCATION: {
-    lat: parseFloat(process.env.LATITUDE) || 28.6139,
-    lon: parseFloat(process.env.LONGITUDE) || 77.2090,
-    city: process.env.CITY || 'Delhi'
-  }
+  lat: parseFloat(process.env.LATITUDE) || 12.9716,  // ← Bangalore coordinates
+  lon: parseFloat(process.env.LONGITUDE) || 77.5946, // ← Bangalore coordinates
+  city: process.env.CITY || 'Bangalore'              // ← CORRECTED SPELLING
+}
 };
 
 class SmartFarmingDataService {
