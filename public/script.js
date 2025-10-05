@@ -1,4 +1,4 @@
-// Smart Farming Dashboard - Complete Working Version with Subscription Features
+// Smart Farming Dashboard - Complete Final Version with All Issues Fixed
 class SmartFarmingDashboard {
   constructor() {
     this.socket = null;
@@ -14,20 +14,24 @@ class SmartFarmingDashboard {
       notifications: true
     };
     this.isServerMode = false;
-    this.chartsAvailable = window.CHARTS_AVAILABLE || false;
+    this.chartsAvailable = false;
     this.socketAvailable = window.IO_AVAILABLE || false;
+    this.chartsInitialized = false;
     
-    // SUBSCRIPTION FEATURES ADDED
+    // FIXED SUBSCRIPTION FEATURES - PROPER ACCESS CONTROL
     this.currentPlan = 'free'; // 'free', 'pro', 'premium'
     this.planFeatures = {
+      // FREE: Basic features only
       free: ['dashboard-basic', 'sensors-basic', 'weather', 'irrigation-basic', 'fertilizer-basic'],
+      // PRO: Adds crop health but NOT predicted yield
       pro: ['dashboard-basic', 'dashboard-health', 'sensors-basic', 'sensors-advanced', 'weather', 'irrigation-basic', 'fertilizer-basic', 'crop-health', 'export-csv'],
+      // PREMIUM: Everything including predicted yield and reports
       premium: ['dashboard-basic', 'dashboard-health', 'dashboard-yield', 'sensors-basic', 'sensors-advanced', 'weather', 'irrigation-basic', 'fertilizer-basic', 'crop-health', 'reports', 'predictions', 'export-all', 'multi-farm', 'api-access']
     };
     
-    console.log('📊 Charts available:', this.chartsAvailable);
     console.log('🔌 Socket.IO available:', this.socketAvailable);
     console.log('💎 Current subscription plan:', this.currentPlan);
+    console.log('🔐 Plan features:', this.planFeatures[this.currentPlan]);
     
     this.init();
   }
@@ -36,56 +40,381 @@ class SmartFarmingDashboard {
     try {
       console.log('🚀 Initializing Smart Farming Dashboard...');
       
-      // Show loading screen
-      this.showLoading(true);
-      
-      // Initialize subscription features
+      this.showLoading(false);
       this.updateSubscriptionBadge();
-      this.updateFeatureAccess();
-      
-      // Check if we're running through server or file://
       this.checkRunningMode();
       
-      // Initialize WebSocket connection (only in server mode)
       if (this.isServerMode && this.socketAvailable) {
         await this.initializeSocket();
-      } else {
-        console.warn('🔧 Running in demo mode - start the server for real-time features');
-        this.showNotification('Demo Mode: Limited functionality', 'warning', 3000);
       }
       
-      // Initialize charts if available
-      if (this.chartsAvailable) {
-        this.initializeAllCharts();
-      } else {
-        this.hideChartElements();
-        this.showNotification('Charts unavailable - data displayed as text', 'info', 4000);
-      }
-      
-      // Set up event listeners
       this.setupEventListeners();
-      
-      // Load settings
       this.loadSettings();
-      
-      // Update date/time
       this.updateDateTime();
       setInterval(() => this.updateDateTime(), 60000);
       
-      // Fetch initial data
+      // FIXED: Always load demo data first, then try API
       await this.fetchInitialData();
+      this.waitForChartJS();
       
-      // Hide loading screen
-      this.showLoading(false);
+      // FIXED: Always update feature access after data is loaded
+      this.updateFeatureAccess();
       
       console.log('✅ Smart Farming Dashboard initialized successfully');
     } catch (error) {
       console.error('Initialization error:', error);
-      this.showNotification('Dashboard loaded with limited functionality', 'warning');
-      this.showLoading(false);
+      this.loadCompleteDemoData();
+      this.updateFeatureAccess();
+    }
+  }
+
+  // CHART.JS DETECTION AND INITIALIZATION
+  waitForChartJS() {
+    const maxAttempts = 20;
+    let attempts = 0;
+    
+    const checkChart = () => {
+      attempts++;
       
-      // Load demo data as fallback
-      this.loadDemoData();
+      if (typeof Chart !== 'undefined') {
+        console.log('📊 Chart.js detected, initializing charts...');
+        this.chartsAvailable = true;
+        this.removeChartPlaceholders();
+        this.initializeAllCharts();
+      } else if (attempts < maxAttempts) {
+        setTimeout(checkChart, 500);
+      } else {
+        console.log('📊 Chart.js not loaded after 10 seconds, showing placeholders');
+        this.hideChartElements();
+      }
+    };
+    
+    checkChart();
+  }
+
+  removeChartPlaceholders() {
+    const placeholders = document.querySelectorAll('.chart-text-alternative');
+    placeholders.forEach(placeholder => {
+      if (placeholder.parentElement) {
+        placeholder.remove();
+      }
+    });
+    
+    const canvases = document.querySelectorAll('canvas');
+    canvases.forEach(canvas => {
+      canvas.style.display = 'block';
+    });
+    
+    console.log('✅ Chart placeholders removed');
+  }
+
+  hideChartElements() {
+    const chartContainers = document.querySelectorAll('.chart-container');
+    chartContainers.forEach(container => {
+      const canvas = container.querySelector('canvas');
+      if (canvas) {
+        canvas.style.display = 'none';
+        
+        if (!container.querySelector('.chart-text-alternative')) {
+          const textDiv = document.createElement('div');
+          textDiv.className = 'chart-text-alternative';
+          textDiv.innerHTML = '<p>📊 Chart data will be displayed here when Chart.js loads</p>';
+          container.appendChild(textDiv);
+        }
+      }
+    });
+  }
+
+  // COMPLETE CHART INITIALIZATION
+  initializeAllCharts() {
+    if (this.chartsInitialized) {
+      console.log('📊 Charts already initialized, skipping...');
+      return;
+    }
+
+    if (typeof Chart === 'undefined') {
+      console.log('Charts not available - Chart.js not loaded');
+      return;
+    }
+    
+    console.log('📊 Initializing all charts with proper access control...');
+    
+    try {
+      Object.values(this.charts).forEach(chart => {
+        if (chart && typeof chart.destroy === 'function') {
+          chart.destroy();
+        }
+      });
+      this.charts = {};
+
+      const createChart = (canvasId, config) => {
+        const canvas = document.getElementById(canvasId);
+        if (canvas) {
+          try {
+            canvas.style.display = 'block';
+            this.charts[canvasId] = new Chart(canvas.getContext('2d'), config);
+            console.log(`✅ Created chart: ${canvasId}`);
+          } catch (error) {
+            console.error(`❌ Error creating ${canvasId}:`, error);
+          }
+        }
+      };
+
+      // Basic Charts - Always Available
+      createChart('temperatureChart', {
+        type: 'line',
+        data: {
+          labels: ['6h ago', '5h ago', '4h ago', '3h ago', '2h ago', '1h ago', 'Now'],
+          datasets: [{
+            label: 'Temperature (°C)',
+            data: [28, 29, 30, 31, 31.5, 31.2, 31.1],
+            borderColor: '#e74c3c',
+            backgroundColor: 'rgba(231,76,60,0.1)',
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: false, grid: { display: true } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+
+      createChart('soilMoistureChart', {
+        type: 'line',
+        data: {
+          labels: ['6h ago', '5h ago', '4h ago', '3h ago', '2h ago', '1h ago', 'Now'],
+          datasets: [{
+            label: 'Soil Moisture (%)',
+            data: [35, 34, 33.5, 33.8, 33.2, 33.0, 33.2],
+            borderColor: '#3498db',
+            backgroundColor: 'rgba(52,152,219,0.1)',
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: false, grid: { display: true } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+
+      createChart('weatherChart', {
+        type: 'bar',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          datasets: [{
+            label: 'Temperature (°C)',
+            data: [32, 29, 28, 26, 30, 31, 33],
+            backgroundColor: '#f39c12'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: false, grid: { display: true } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+
+      // PRO+ Charts
+      if (this.hasAccess('sensors-advanced')) {
+        createChart('humidityChart', {
+          type: 'line',
+          data: {
+            labels: ['6h ago', '5h ago', '4h ago', '3h ago', '2h ago', '1h ago', 'Now'],
+            datasets: [{
+              label: 'Humidity (%)',
+              data: [60, 62, 64, 66, 65, 64, 65],
+              borderColor: '#9b59b6',
+              backgroundColor: 'rgba(155,89,182,0.1)',
+              tension: 0.3,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { beginAtZero: false, grid: { display: true } },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+
+        createChart('phChart', {
+          type: 'line',
+          data: {
+            labels: ['6h ago', '5h ago', '4h ago', '3h ago', '2h ago', '1h ago', 'Now'],
+            datasets: [{
+              label: 'pH Level',
+              data: [6.7, 6.8, 6.8, 6.9, 6.8, 6.8, 6.8],
+              borderColor: '#f39c12',
+              backgroundColor: 'rgba(243,156,18,0.1)',
+              tension: 0.3,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { min: 6.0, max: 7.5, grid: { display: true } },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+      }
+
+      // Crop Health Chart - PRO+ only
+      if (this.hasAccess('crop-health')) {
+        createChart('healthScoreChart', {
+          type: 'doughnut',
+          data: {
+            datasets: [{
+              data: [88, 12],
+              backgroundColor: ['#2ecc71', '#ecf0f1'],
+              borderWidth: 0,
+              cutout: '70%'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 1,
+            plugins: { legend: { display: false } }
+          }
+        });
+      }
+
+      // Premium Charts - Reports section
+      if (this.hasAccess('reports')) {
+        createChart('historicalChart', {
+          type: 'line',
+          data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [
+              {
+                label: 'Temperature (°C)',
+                data: [22, 24, 27, 29, 31, 33],
+                borderColor: '#e74c3c',
+                backgroundColor: 'rgba(231,76,60,0.1)'
+              },
+              {
+                label: 'Humidity (%)',
+                data: [75, 70, 68, 65, 62, 60],
+                borderColor: '#3498db',
+                backgroundColor: 'rgba(52,152,219,0.1)'
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { boxWidth: 12, font: { size: 11 } }
+              }
+            },
+            scales: {
+              y: { beginAtZero: false, grid: { display: true } },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+
+        createChart('yieldChart', {
+          type: 'line',
+          data: {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+            datasets: [{
+              label: 'Growth Progress (%)',
+              data: [15, 28, 42, 56, 68, 75],
+              borderColor: '#2a9d8f',
+              backgroundColor: 'rgba(42,157,143,0.1)',
+              tension: 0.3,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { min: 0, max: 100, grid: { display: true } },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+
+        createChart('costSavingsChart', {
+          type: 'doughnut',
+          data: {
+            labels: ['Water', 'Fertilizer', 'Labor', 'Energy'],
+            datasets: [{
+              data: [35, 28, 45, 22],
+              backgroundColor: ['#2a9d8f', '#e9c46a', '#f4a261', '#e76f51'],
+              borderWidth: 0,
+              cutout: '60%'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { boxWidth: 12, font: { size: 11 } }
+              }
+            }
+          }
+        });
+
+        createChart('waterUsageChart', {
+          type: 'bar',
+          data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+              label: 'Water Usage (L)',
+              data: [1200, 1150, 1300, 1100, 1000, 950],
+              backgroundColor: '#2196F3',
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { beginAtZero: true, grid: { display: true } },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+      }
+
+      this.chartsInitialized = true;
+      console.log('✅ All charts initialized successfully');
+      console.log('📊 Total charts created:', Object.keys(this.charts).length);
+      
+    } catch (error) {
+      console.error('Chart initialization error:', error);
     }
   }
 
@@ -114,9 +443,9 @@ class SmartFarmingDashboard {
     return this.planFeatures[this.currentPlan].includes(feature);
   }
 
-  // FIXED: Proper feature access update method
   updateFeatureAccess() {
     console.log('🔄 Updating feature access for plan:', this.currentPlan);
+    console.log('🔐 Available features:', this.planFeatures[this.currentPlan]);
     
     // Update plan cards
     document.querySelectorAll('.pricing-card').forEach(card => {
@@ -139,78 +468,158 @@ class SmartFarmingDashboard {
       }
     }
 
-    // FIXED: Handle Crop Health section specifically
+    // Handle premium sections
     this.updatePremiumSection('crop-health', 'crop-health');
     this.updatePremiumSection('reports', 'reports');
     this.updatePremiumSection('predictions', 'predictions');
 
+    // FIXED: Update overview cards access with current data
+    if (this.data.current) {
+      this.updateOverviewCardAccess();
+    }
+
+    // Show/hide premium overlays
+    document.querySelectorAll('.premium-feature').forEach(feature => {
+      const overlay = feature.querySelector('.premium-overlay');
+      if (overlay) {
+        if (feature.classList.contains('sensors-advanced') && !this.hasAccess('sensors-advanced')) {
+          overlay.style.display = 'flex';
+        } else if (feature.classList.contains('dashboard-health') && !this.hasAccess('dashboard-health')) {
+          overlay.style.display = 'flex';
+        } else if (feature.classList.contains('dashboard-yield') && !this.hasAccess('dashboard-yield')) {
+          overlay.style.display = 'flex';
+        } else {
+          overlay.style.display = 'none';
+        }
+      }
+    });
+
     // Update navigation buttons
     document.querySelectorAll('.nav-btn.premium-required').forEach(btn => {
       const target = btn.getAttribute('data-target');
-      if (target === 'crop-health' && this.hasAccess('crop-health')) {
-        btn.style.opacity = '1';
-        btn.style.pointerEvents = 'auto';
-      } else if ((target === 'reports' || target === 'predictions') && this.hasAccess('reports')) {
-        btn.style.opacity = '1';
-        btn.style.pointerEvents = 'auto';
-      } else if (btn.classList.contains('premium-required')) {
+      if (target === 'crop-health' && !this.hasAccess('crop-health')) {
         btn.style.opacity = '0.6';
         btn.style.pointerEvents = 'none';
+      } else if ((target === 'reports' || target === 'predictions') && !this.hasAccess('reports')) {
+        btn.style.opacity = '0.6';
+        btn.style.pointerEvents = 'none';
+      } else {
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
       }
     });
     
     console.log('✅ Feature access updated');
   }
 
-  // ADDED: Missing updatePremiumSection method
+  // FIXED: Update Overview Card Access Based on Plan and Data
+  updateOverviewCardAccess() {
+    const data = this.data.current;
+    if (!data) return;
+
+    // Handle Crop Health overview card
+    const healthCard = document.getElementById('overviewHealth')?.closest('.overview-card');
+    const healthValue = document.getElementById('overviewHealth');
+    const healthStatus = document.getElementById('overviewHealthStatus');
+    
+    if (this.hasAccess('dashboard-health') && data.cropHealth) {
+      // PRO+ users: Show actual data
+      if (healthValue) healthValue.textContent = Math.round(data.cropHealth.score) + '%';
+      if (healthStatus) {
+        healthStatus.textContent = data.cropHealth.score > 80 ? 'Excellent' : data.cropHealth.score > 60 ? 'Good' : 'Fair';
+      }
+      if (healthCard) {
+        healthCard.style.opacity = '1';
+        healthCard.style.cursor = 'default';
+        healthCard.onclick = null;
+        this.removeLockIcon(healthCard);
+      }
+      console.log('✅ Crop Health data shown for', this.currentPlan);
+    } else {
+      // FREE users: Show locked state
+      if (healthValue) healthValue.textContent = '--';
+      if (healthStatus) healthStatus.textContent = 'Upgrade to Pro';
+      if (healthCard) {
+        healthCard.style.opacity = '0.6';
+        healthCard.style.cursor = 'pointer';
+        healthCard.onclick = () => this.showUpgradeModal('pro');
+        this.addLockIcon(healthCard);
+      }
+      console.log('🔒 Crop Health locked for', this.currentPlan);
+    }
+
+    // Handle Predicted Yield overview card
+    const yieldCard = document.getElementById('overviewYield')?.closest('.overview-card');
+    const yieldValue = document.getElementById('overviewYield');
+    const yieldStatus = document.getElementById('overviewYieldStatus');
+    
+    if (this.hasAccess('dashboard-yield') && data.yieldPrediction) {
+      // PREMIUM users: Show actual data
+      if (yieldValue) yieldValue.textContent = data.yieldPrediction.perHectare + ' kg/ha';
+      if (yieldStatus) yieldStatus.textContent = data.yieldPrediction.confidence + '% confidence';
+      if (yieldCard) {
+        yieldCard.style.opacity = '1';
+        yieldCard.style.cursor = 'default';
+        yieldCard.onclick = null;
+        this.removeLockIcon(yieldCard);
+      }
+      console.log('✅ Predicted Yield data shown for', this.currentPlan);
+    } else {
+      // FREE/PRO users: Show locked state
+      if (yieldValue) yieldValue.textContent = '--';
+      if (yieldStatus) yieldStatus.textContent = 'Upgrade to Premium';
+      if (yieldCard) {
+        yieldCard.style.opacity = '0.6';
+        yieldCard.style.cursor = 'pointer';
+        yieldCard.onclick = () => this.showUpgradeModal('premium');
+        this.addLockIcon(yieldCard);
+      }
+      console.log('🔒 Predicted Yield locked for', this.currentPlan);
+    }
+  }
+
+  addLockIcon(card) {
+    if (!card.querySelector('.lock-icon')) {
+      const lock = document.createElement('div');
+      lock.className = 'lock-icon';
+      lock.innerHTML = '🔒';
+      lock.style.cssText = 'position: absolute; top: 10px; right: 10px; font-size: 16px; opacity: 0.7; z-index: 10;';
+      card.style.position = 'relative';
+      card.appendChild(lock);
+    }
+  }
+
+  removeLockIcon(card) {
+    const lock = card.querySelector('.lock-icon');
+    if (lock) {
+      lock.remove();
+    }
+  }
+
   updatePremiumSection(sectionId, featureKey) {
     const section = document.getElementById(sectionId);
-    if (!section) {
-      console.warn(`⚠️ Section ${sectionId} not found`);
-      return;
-    }
+    if (!section) return;
     
     const overlay = section.querySelector('.premium-section-overlay');
     const content = section.querySelector('.crop-health-content, .reports-content, .predictions-content');
     
     if (this.hasAccess(featureKey)) {
       console.log(`✅ Granting access to ${sectionId}`);
-      // Hide overlay and show content
-      if (overlay) {
-        overlay.style.display = 'none';
-        console.log(`Hidden overlay for ${sectionId}`);
-      }
+      if (overlay) overlay.style.display = 'none';
       if (content) {
         content.style.display = 'block';
-        console.log(`Showing content for ${sectionId}`);
       } else {
-        console.warn(`⚠️ No content div found for ${sectionId} - creating basic content`);
         this.createBasicContent(section, sectionId);
       }
-      
-      // Remove premium-section class
       section.classList.remove('premium-section');
-      
-      // Update data if available
-      if (this.data.current) {
-        if (sectionId === 'crop-health') {
-          this.updateCropHealthData(this.data.current);
-        } else if (sectionId === 'reports') {
-          this.updateReportsData(this.data.current);
-        } else if (sectionId === 'predictions') {
-          this.updatePredictionsData(this.data.current);
-        }
-      }
     } else {
       console.log(`❌ Denying access to ${sectionId}`);
-      // Show overlay and hide content
       if (overlay) overlay.style.display = 'flex';
       if (content) content.style.display = 'none';
       section.classList.add('premium-section');
     }
   }
 
-  // ADDED: Method to create basic content if missing
   createBasicContent(section, sectionId) {
     let contentHTML = '';
     
@@ -227,17 +636,19 @@ class SmartFarmingDashboard {
             </div>
             
             <div class="growth-info">
-              <div class="growth-metric">
-                <span>Growth Stage:</span>
-                <strong id="growthStage">Vegetative Growth</strong>
-              </div>
-              <div class="growth-metric">
-                <span>Days from Planting:</span>
-                <strong id="daysFromPlanting">45 days</strong>
-              </div>
-              <div class="growth-metric">
-                <span>Expected Harvest:</span>
-                <strong id="expectedHarvest">30 days</strong>
+              <div class="growth-metrics">
+                <div class="growth-metric">
+                  <span class="metric-label">Growth Stage:</span>
+                  <strong class="metric-value" id="growthStage">Vegetative Growth</strong>
+                </div>
+                <div class="growth-metric">
+                  <span class="metric-label">Days from Planting:</span>
+                  <strong class="metric-value" id="daysFromPlanting">45 days</strong>
+                </div>
+                <div class="growth-metric">
+                  <span class="metric-label">Expected Harvest:</span>
+                  <strong class="metric-value" id="expectedHarvest">75 days</strong>
+                </div>
               </div>
             </div>
           </div>
@@ -247,12 +658,12 @@ class SmartFarmingDashboard {
             <div class="factors-grid" id="healthFactors">
               <div class="factor-card optimal">
                 <h4>Temperature</h4>
-                <div class="factor-value">25°C</div>
+                <div class="factor-value">31°C</div>
                 <div class="factor-status">Optimal</div>
               </div>
               <div class="factor-card optimal">
                 <h4>Soil Moisture</h4>
-                <div class="factor-value">45%</div>
+                <div class="factor-value">33%</div>
                 <div class="factor-status">Good</div>
               </div>
               <div class="factor-card optimal">
@@ -260,150 +671,223 @@ class SmartFarmingDashboard {
                 <div class="factor-value">6.8</div>
                 <div class="factor-status">Optimal</div>
               </div>
+              <div class="factor-card warning">
+                <h4>Humidity</h4>
+                <div class="factor-value">65%</div>
+                <div class="factor-status">Moderate</div>
+              </div>
             </div>
+          </div>
+
+          <div class="health-chart-container">
+            <h3>📊 Health Score Breakdown</h3>
+            <canvas id="healthScoreChart" width="200" height="200"></canvas>
           </div>
         </div>
       `;
     } else if (sectionId === 'reports') {
       contentHTML = `
         <div class="reports-content" style="display: block;">
-          <h3>📊 Analytics Dashboard</h3>
-          <p>Comprehensive reports and analytics for your farm performance.</p>
+          <div class="report-overview">
+            <h3>📊 Performance Analytics</h3>
+            <p>Comprehensive analysis of your farm's performance metrics and trends.</p>
+          </div>
+          
           <div class="report-metrics">
             <div class="metric-card">
               <h4>Average Soil Moisture</h4>
-              <div class="metric-value" id="avgMoisture">42.5%</div>
+              <div class="metric-value" id="avgMoisture">33.2%</div>
+              <div class="metric-trend">↑ 5% from last month</div>
             </div>
             <div class="metric-card">
               <h4>Irrigation Efficiency</h4>
-              <div class="metric-value" id="irrigationEfficiency">87%</div>
+              <div class="metric-value" id="irrigationEfficiency">92%</div>
+              <div class="metric-trend">↑ 3% improvement</div>
             </div>
+            <div class="metric-card">
+              <h4>Nutrient Balance</h4>
+              <div class="metric-value" id="nutrientBalance">Excellent</div>
+              <div class="metric-trend">Stable</div>
+            </div>
+          </div>
+
+          <div class="chart-container">
+            <h4>📈 Growth Progress</h4>
+            <canvas id="yieldChart" width="400" height="300"></canvas>
+          </div>
+
+          <div class="chart-container">
+            <h4>💰 Cost Savings</h4>
+            <canvas id="costSavingsChart" width="400" height="300"></canvas>
+          </div>
+
+          <div class="chart-container">
+            <h4>💧 Water Usage Trend</h4>
+            <canvas id="waterUsageChart" width="400" height="300"></canvas>
           </div>
         </div>
       `;
     } else if (sectionId === 'predictions') {
       contentHTML = `
         <div class="predictions-content" style="display: block;">
-          <h3>🔮 AI Predictions</h3>
+          <div class="prediction-overview">
+            <h3>🔮 AI-Powered Predictions</h3>
+            <p>Advanced machine learning models predict your farm's future performance.</p>
+          </div>
+          
           <div class="prediction-cards">
             <div class="prediction-card">
-              <h4>Yield Prediction</h4>
-              <div class="prediction-value" id="yieldPredictionValue">4200 kg/ha</div>
-              <div class="prediction-confidence" id="yieldConfidence">85% confidence</div>
+              <h4>🌾 Yield Prediction</h4>
+              <div class="prediction-value" id="yieldPredictionValue">5175 kg/ha</div>
+              <div class="prediction-confidence" id="yieldConfidence">92% confidence</div>
+              <div class="prediction-factors">
+                <div class="factors-grid" id="yieldFactors">
+                  <div class="factor-item">
+                    <span>Health</span>
+                    <span>88%</span>
+                  </div>
+                  <div class="factor-item">
+                    <span>Weather</span>
+                    <span>85%</span>
+                  </div>
+                  <div class="factor-item">
+                    <span>Soil</span>
+                    <span>95%</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="ai-recommendations" id="aiRecommendations">
-            <div class="ai-recommendation">
-              <p>🤖 AI analysis shows optimal growing conditions</p>
+
+          <div class="weather-impact">
+            <h3>🌤️ Weather Impact Analysis</h3>
+            <div id="weatherImpact">
+              <div class="impact-summary">
+                <h4>Overall Impact: Positive</h4>
+                <p>Current weather conditions are favorable for crop growth and development.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="ai-recommendations-section">
+            <h3>🤖 AI Recommendations</h3>
+            <div id="aiRecommendations">
+              <div class="ai-recommendation">
+                <div class="ai-rec-header">
+                  <span class="ai-rec-icon">🌱</span>
+                  <strong>Optimal Growth Conditions</strong>
+                </div>
+                <p>AI analysis indicates excellent growing conditions. Continue current management practices.</p>
+                <div class="ai-rec-priority">Priority: Low</div>
+              </div>
             </div>
           </div>
         </div>
       `;
     }
     
-    // Insert the content after the overlay
     const overlay = section.querySelector('.premium-section-overlay');
     if (overlay && contentHTML) {
       overlay.insertAdjacentHTML('afterend', contentHTML);
-      console.log(`✅ Created basic content for ${sectionId}`);
+      console.log(`✅ Created content for ${sectionId}`);
     }
   }
 
-  // Keep all your existing methods here...
-  // [All your existing methods from the script should remain the same]
-  
   showUpgradeModal(suggestedPlan = 'pro') {
-  const modal = document.getElementById('upgradeModal');
-  const modalContent = document.getElementById('modalContent');
-  
-  if (!modal || !modalContent) return;
-  
-  modalContent.innerHTML = `
-    <div class="upgrade-modal-content">
-      <h2>🚀 Upgrade Your Plan</h2>
-      <p>Unlock powerful features to maximize your farming potential!</p>
-      
-      <div class="modal-plans">
-        <div class="modal-plan ${suggestedPlan === 'pro' ? 'recommended' : ''}">
-          <div class="modal-plan-header">
-            <h3>Pro Plan</h3>
-            ${suggestedPlan === 'pro' ? '<div class="recommended-badge">Recommended</div>' : ''}
+    const modal = document.getElementById('upgradeModal');
+    const modalContent = document.getElementById('modalContent');
+    
+    if (!modal || !modalContent) return;
+    
+    modalContent.innerHTML = `
+      <div class="upgrade-modal-content">
+        <h2>🚀 Upgrade Your Plan</h2>
+        <p>Unlock powerful features to maximize your farming potential!</p>
+        
+        <div class="modal-plans">
+          <div class="modal-plan ${suggestedPlan === 'pro' ? 'recommended' : ''}">
+            <div class="modal-plan-header">
+              <h3>Pro Plan</h3>
+              ${suggestedPlan === 'pro' ? '<div class="recommended-badge">Recommended</div>' : ''}
+            </div>
+            <div class="modal-plan-price">₹99/month</div>
+            <ul class="modal-plan-features">
+              <li>✓ Advanced sensors (pH, Humidity)</li>
+              <li>✓ Crop health analysis</li>
+              <li>✓ Data export (CSV)</li>
+              <li>✓ Email/SMS alerts</li>
+            </ul>
+            <button class="modal-plan-btn" onclick="window.dashboard.subscribeToPlan('pro')">Choose Pro</button>
           </div>
-          <div class="modal-plan-price">₹299/month</div>
-          <ul class="modal-plan-features">
-            <li>✓ Advanced sensors (pH, Humidity)</li>
-            <li>✓ Crop health analysis</li>
-            <li>✓ 30-day historical data</li>
-            <li>✓ Email/SMS alerts</li>
-          </ul>
-          <button class="modal-plan-btn" onclick="subscribeToPlan('pro')">Choose Pro</button>
+          
+          <div class="modal-plan ${suggestedPlan === 'premium' ? 'recommended' : ''}">
+            <div class="modal-plan-header">
+              <h3>Premium Plan</h3>
+              ${suggestedPlan === 'premium' ? '<div class="recommended-badge">Recommended</div>' : ''}
+            </div>
+            <div class="modal-plan-price">₹199/month</div>
+            <ul class="modal-plan-features">
+              <li>✓ Everything in Pro</li>
+              <li>✓ AI yield predictions</li>
+              <li>✓ Advanced analytics & reports</li>
+              <li>✓ Complete data export</li>
+              <li>✓ Multi-farm management</li>
+            </ul>
+            <button class="modal-plan-btn premium" onclick="window.dashboard.subscribeToPlan('premium')">Choose Premium</button>
+          </div>
         </div>
         
-        <div class="modal-plan ${suggestedPlan === 'premium' ? 'recommended' : ''}">
-          <div class="modal-plan-header">
-            <h3>Premium Plan</h3>
-            ${suggestedPlan === 'premium' ? '<div class="recommended-badge">Recommended</div>' : ''}
+        <div class="modal-benefits">
+          <h4>💡 What you'll get:</h4>
+          <div class="modal-benefit-items">
+            <div class="modal-benefit">📈 Increase yield by up to 25%</div>
+            <div class="modal-benefit">💰 Reduce costs by up to 30%</div>
+            <div class="modal-benefit">🤖 AI-powered recommendations</div>
+            <div class="modal-benefit">📱 Real-time alerts and notifications</div>
           </div>
-          <div class="modal-plan-price">₹599/month</div>
-          <ul class="modal-plan-features">
-            <li>✓ Everything in Pro</li>
-            <li>✓ AI yield predictions</li>
-            <li>✓ Advanced analytics</li>
-            <li>✓ Multi-farm management</li>
-          </ul>
-          <button class="modal-plan-btn premium" onclick="subscribeToPlan('premium')">Choose Premium</button>
         </div>
       </div>
-      
-      <div class="modal-benefits">
-        <h4>💡 What you'll get:</h4>
-        <div class="modal-benefit-items">
-          <div class="modal-benefit">📈 Increase yield by up to 25%</div>
-          <div class="modal-benefit">💰 Reduce costs by up to 30%</div>
-          <div class="modal-benefit">🤖 AI-powered recommendations</div>
-          <div class="modal-benefit">📱 Real-time alerts and notifications</div>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  modal.style.display = 'block';
-}
+    `;
+    
+    modal.style.display = 'block';
+  }
 
+  closeUpgradeModal() {
+    const modal = document.getElementById('upgradeModal');
+    if (modal) modal.style.display = 'none';
+  }
 
   subscribeToPlan(plan) {
     console.log('💳 Subscribing to plan:', plan);
     
-    // Show loading state
     const buttons = document.querySelectorAll('.modal-plan-btn, .plan-btn');
     buttons.forEach(button => {
-      if (button.textContent.toLowerCase().includes(plan.toLowerCase())) {
+      if (button.textContent.toLowerCase().includes(plan.toLowerCase()) || 
+          button.getAttribute('onclick')?.includes(plan)) {
         const originalText = button.textContent;
         button.textContent = 'Processing...';
         button.disabled = true;
         
-        // Simulate payment process
         setTimeout(() => {
-          // Update subscription
           this.currentPlan = plan;
-          console.log('✅ Subscription updated to:', plan);
+          console.log('✅ Subscription updated to:', this.currentPlan);
           
-          // Update UI
           this.updateSubscriptionBadge();
           this.updateFeatureAccess();
-          
-          // Force refresh current section
-          const activeSection = document.querySelector('.nav-btn.active');
-          if (activeSection) {
-            const target = activeSection.getAttribute('data-target');
-            console.log('🔄 Refreshing section:', target);
-            this.handleSectionChange(target);
-          }
-          
           this.closeUpgradeModal();
           this.showSubscriptionSuccess(plan);
           
-          // Restore button
+          // FIXED: Reinitialize charts and update data display
+          if (this.chartsAvailable) {
+            this.chartsInitialized = false;
+            this.initializeAllCharts();
+          }
+          
+          // FIXED: Refresh overview cards with current plan access
+          if (this.data.current) {
+            this.updateOverviewCardAccess();
+          }
+          
           button.textContent = originalText;
           button.disabled = false;
         }, 2000);
@@ -411,17 +895,16 @@ class SmartFarmingDashboard {
     });
   }
 
-
-
   showSubscriptionSuccess(plan) {
     const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
     const alert = document.createElement('div');
     alert.className = 'success-alert';
+    alert.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px; border-radius: 5px; z-index: 9999; box-shadow: 0 4px 8px rgba(0,0,0,0.2);';
     alert.innerHTML = `
-      <div class="success-content">
-        <span class="success-icon">🎉</span>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 20px;">🎉</span>
         <span>Successfully upgraded to ${planName} plan!</span>
-        <button onclick="this.parentElement.parentElement.remove()">×</button>
+        <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: white; cursor: pointer; font-size: 16px; padding: 0 5px;">×</button>
       </div>
     `;
     document.body.appendChild(alert);
@@ -431,13 +914,25 @@ class SmartFarmingDashboard {
     }, 5000);
   }
 
-  // ALL YOUR EXISTING METHODS FROM ORIGINAL FILE
+  checkPremiumFeature(feature) {
+    if (feature === 'export' && !this.hasAccess('export-csv') && !this.hasAccess('export-all')) {
+      this.showUpgradeModal('pro');
+      return false;
+    }
+    if (feature === 'crop-health' && !this.hasAccess('crop-health')) {
+      this.showUpgradeModal('pro');
+      return false;
+    }
+    if ((feature === 'reports' || feature === 'predictions') && !this.hasAccess('reports')) {
+      this.showUpgradeModal('premium');
+      return false;
+    }
+    return true;
+  }
+
+  // CORE METHODS
   checkRunningMode() {
     this.isServerMode = window.location.protocol === 'http:' || window.location.protocol === 'https:';
-    
-    if (!this.isServerMode) {
-      console.warn('⚠️ Running in file mode. Start the Node.js server for full functionality.');
-    }
   }
 
   showLoading(show) {
@@ -447,26 +942,8 @@ class SmartFarmingDashboard {
     }
   }
 
-  hideChartElements() {
-    const chartContainers = document.querySelectorAll('.chart-container');
-    chartContainers.forEach(container => {
-      const canvas = container.querySelector('canvas');
-      if (canvas) {
-        canvas.style.display = 'none';
-        
-        const textDiv = document.createElement('div');
-        textDiv.className = 'chart-text-alternative';
-        textDiv.innerHTML = '<p>📊 Chart data will be displayed here when Chart.js loads</p>';
-        container.appendChild(textDiv);
-      }
-    });
-  }
-
   async initializeSocket() {
-    if (!this.socketAvailable) {
-      console.warn('Socket.IO not available');
-      return Promise.resolve();
-    }
+    if (!this.socketAvailable) return Promise.resolve();
 
     return new Promise((resolve, reject) => {
       try {
@@ -514,11 +991,16 @@ class SmartFarmingDashboard {
     }
   }
 
+  // FIXED: Data Loading with Guaranteed Demo Data
   async fetchInitialData() {
+    console.log('📡 Loading complete dashboard data...');
+    
+    // ALWAYS load demo data first to ensure we have data
+    this.loadCompleteDemoData();
+    
+    // Then try to fetch real data if in server mode
     try {
       if (this.isServerMode) {
-        console.log('📡 Fetching data from server APIs...');
-        
         const [currentResponse, forecastResponse] = await Promise.all([
           fetch('/api/current-data').catch(() => null),
           fetch('/api/forecast').catch(() => null)
@@ -528,84 +1010,58 @@ class SmartFarmingDashboard {
           const currentData = await currentResponse.json();
           const forecastData = await forecastResponse.json();
 
-          console.log('✅ Real API data received:', currentData);
-
+          console.log('✅ Real API data received, updating demo data:', currentData);
           this.handleDataUpdate({
             ...currentData,
             forecast: forecastData.forecast
           });
-
-          this.showNotification('✅ Real weather & sensor data loaded!', 'success', 4000);
-          return;
         }
       }
-      
-      console.log('🔄 Loading demo data...');
-      this.loadDemoData();
-      
     } catch (error) {
-      console.error('Error fetching initial data:', error);
-      this.showNotification('Loading demo data', 'info');
-      this.loadDemoData();
+      console.error('API fetch error (using demo data):', error);
     }
   }
 
-  loadDemoData() {
-    console.log('🎭 Generating realistic demo data...');
+  // FIXED: Guaranteed Demo Data Loading
+  loadCompleteDemoData() {
+    console.log('🎭 Loading complete demo data...');
     
     const demoData = {
       weather: {
-        temperature: 25 + Math.random() * 10,
-        humidity: 50 + Math.random() * 30,
+        temperature: 31.1,
+        humidity: 65,
         pressure: 1013,
-        windSpeed: Math.random() * 10,
-        windDirection: Math.random() * 360,
-        description: 'partly cloudy',
-        icon: '02d',
-        visibility: 10,
-        uvIndex: 6,
-        timestamp: new Date().toISOString()
+        windSpeed: 3.6,
+        visibility: 4.5,
+        uvIndex: 1,
+        description: "haze"
       },
       soil: {
-        moisture: 35 + Math.random() * 25,
-        temperature: 20 + Math.random() * 10,
-        ph: 6.5 + (Math.random() - 0.5) * 1,
-        nitrogen: 50 + Math.random() * 30,
-        phosphorus: 40 + Math.random() * 30,
-        potassium: 55 + Math.random() * 25,
-        conductivity: 1.2,
-        timestamp: new Date().toISOString()
+        moisture: 33.2,
+        ph: 6.8,
+        nitrogen: 68,
+        phosphorus: 45,
+        potassium: 72
       },
       cropHealth: {
-        score: 70 + Math.random() * 25,
-        factors: {
-          temperature: { status: 'optimal', value: 25 },
-          soilMoisture: { status: 'optimal', value: 45 },
-          ph: { status: 'optimal', value: 6.8 },
-          humidity: { status: 'moderate', value: 65 }
-        },
-        recommendations: [
-          {
-            type: 'irrigation',
-            priority: 'MEDIUM',
-            message: 'Monitor soil moisture levels',
-            action: 'Check irrigation schedule in 2-3 days'
-          }
-        ],
-        growthStage: 'Vegetative',
+        score: 88,
+        growthStage: "Vegetative Growth",
         daysFromPlanting: 45,
         expectedHarvest: 75,
-        timestamp: new Date().toISOString()
+        factors: {
+          temperature: { status: 'optimal', value: 31 },
+          soilMoisture: { status: 'optimal', value: 33 },
+          ph: { status: 'optimal', value: 6.8 },
+          humidity: { status: 'moderate', value: 65 }
+        }
       },
       yieldPrediction: {
-        predicted: 4200,
-        perHectare: 4200,
-        totalField: 10500,
-        confidence: 85,
+        perHectare: 5175,
+        confidence: 92,
         factors: {
-          health: 85,
-          weather: 80,
-          soil: 90
+          health: 88,
+          weather: 85,
+          soil: 95
         }
       },
       forecast: [
@@ -623,312 +1079,73 @@ class SmartFarmingDashboard {
         humidity: Array.from({length: 20}, () => 55 + Math.random() * 20),
         soilMoisture: Array.from({length: 20}, () => 40 + Math.random() * 15)
       },
-      location: { city: 'Demo Location', lat: 28.6139, lon: 77.2090 },
+      location: { city: "Bengalore" },
       timestamp: new Date().toISOString()
     };
-
+    
+    console.log('🎭 Demo data created:', demoData);
+    
+    // FIXED: Store data and populate dashboard
+    this.data.current = demoData;
     this.handleDataUpdate(demoData);
-    this.showNotification('🎭 Demo data loaded - All features working!', 'info', 4000);
+    
+    console.log('✅ Demo data loaded and stored successfully');
   }
 
   handleDataUpdate(data) {
-    console.log('📊 Updating dashboard with data...');
+    console.log('📊 Handling data update...');
     
     this.data.current = data;
+    this.populateCompleteDashboard(data);
     
-    // Update all sections with subscription checks
-    this.updateOverviewCards(data);
-    this.updateSensorData(data);
-    this.updateWeatherData(data);
-    this.updateIrrigationData(data);
-    this.updateFertilizerData(data);
+    // FIXED: Update feature access after data update
+    this.updateOverviewCardAccess();
     
-    // Premium features with access control
-    if (this.hasAccess('crop-health')) {
-      this.updateCropHealthData(data);
-    }
-    if (this.hasAccess('reports')) {
-      this.updateReportsData(data);
-    }
-    if (this.hasAccess('predictions')) {
-      this.updatePredictionsData(data);
-    }
-    
-    this.populateAllSectionDetails(data);
-    this.updateLastUpdateTime();
-    
-    console.log('✅ Dashboard updated successfully');
+    console.log('✅ Dashboard updated with data');
   }
 
-  updateLastUpdateTime() {
-    const element = document.getElementById('lastUpdate');
-    if (element) {
-      element.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
-    }
-  }
+  // FIXED: Complete Dashboard Population
+  populateCompleteDashboard(data) {
+    console.log('📊 Populating complete dashboard with data:', data);
 
-  updateOverviewCards(data) {
-    if (!data.weather || !data.soil || !data.cropHealth) return;
-
-    // Temperature
-    const tempElement = document.getElementById('overviewTemp');
-    const tempStatus = document.getElementById('overviewTempStatus');
-    if (tempElement) {
-      tempElement.textContent = `${Math.round(data.weather.temperature)}°C`;
-      if (tempStatus) tempStatus.textContent = this.getTemperatureStatus(data.weather.temperature);
-    }
-
-    // Soil Moisture
-    const moistureElement = document.getElementById('overviewMoisture');
-    const moistureStatus = document.getElementById('overviewMoistureStatus');
-    if (moistureElement) {
-      moistureElement.textContent = `${data.soil.moisture.toFixed(1)}%`;
-      if (moistureStatus) moistureStatus.textContent = this.getMoistureStatus(data.soil.moisture);
-    }
-
-    // Crop Health (Premium Feature Check)
-    const healthElement = document.getElementById('overviewHealth');
-    const healthStatus = document.getElementById('overviewHealthStatus');
-    if (healthElement && this.hasAccess('dashboard-health')) {
-      healthElement.textContent = `${Math.round(data.cropHealth.score)}%`;
-      if (healthStatus) healthStatus.textContent = this.getHealthStatus(data.cropHealth.score);
-    }
-
-    // Predicted Yield (Premium Feature Check)
-    const yieldElement = document.getElementById('overviewYield');
-    const yieldStatus = document.getElementById('overviewYieldStatus');
-    if (yieldElement && data.yieldPrediction && this.hasAccess('dashboard-yield')) {
-      yieldElement.textContent = `${data.yieldPrediction.perHectare} kg/ha`;
-      if (yieldStatus) yieldStatus.textContent = `${data.yieldPrediction.confidence}% confidence`;
-    }
-
-    // Update alerts
-    this.updateAlerts(data);
-  }
-
-  updateSensorData(data) {
-    if (!data.weather || !data.soil) return;
-
-    // Update sensor values with subscription checks
-    if (this.hasAccess('sensors-basic')) {
-      this.updateElement('sensorTemp', `${Math.round(data.weather.temperature)}°C`);
-      this.updateElement('sensorMoisture', `${data.soil.moisture.toFixed(1)}%`);
+    // Basic Overview Cards - Always Available
+    if (data.weather) {
+      this.updateElement('overviewTemp', Math.round(data.weather.temperature) + '°C');
+      this.updateElement('overviewTempStatus', 
+        data.weather.temperature > 30 ? 'Hot' : data.weather.temperature < 15 ? 'Cold' : 'Optimal');
     }
     
-    if (this.hasAccess('sensors-advanced')) {
-      this.updateElement('sensorHumidity', `${data.weather.humidity}%`);
-      this.updateElement('sensorPH', data.soil.ph.toFixed(2));
+    if (data.soil) {
+      this.updateElement('overviewMoisture', data.soil.moisture.toFixed(1) + '%');
+      this.updateElement('overviewMoistureStatus', 
+        data.soil.moisture < 30 ? 'Low' : data.soil.moisture > 70 ? 'High' : 'Good');
     }
-
-    // Update trends
-    this.updateTrend('sensorTempTrend', data.weather.temperature, 25);
-    this.updateTrend('sensorMoistureTrend', data.soil.moisture, 40);
     
-    if (this.hasAccess('sensors-advanced')) {
-      this.updateTrend('sensorHumidityTrend', data.weather.humidity, 60);
-      this.updateTrend('sensorPHTrend', data.soil.ph, 6.5);
-    }
-
-    // Update charts if available
-    if (this.chartsAvailable) {
-      this.updateSensorCharts(data);
-    } else {
-      this.updateTextAlternatives(data);
-    }
-  }
-
-  updateTextAlternatives(data) {
-    const alternatives = document.querySelectorAll('.chart-text-alternative');
-    alternatives.forEach((alt, index) => {
-      switch (index) {
-        case 0: // Temperature
-          alt.innerHTML = `<p><strong>Current: ${Math.round(data.weather.temperature)}°C</strong><br>Status: ${this.getTemperatureStatus(data.weather.temperature)}</p>`;
-          break;
-        case 1: // Soil Moisture
-          alt.innerHTML = `<p><strong>Current: ${data.soil.moisture.toFixed(1)}%</strong><br>Status: ${this.getMoistureStatus(data.soil.moisture)}</p>`;
-          break;
-        case 2: // Humidity
-          alt.innerHTML = `<p><strong>Current: ${data.weather.humidity}%</strong><br>Trend: Stable</p>`;
-          break;
-        case 3: // pH
-          alt.innerHTML = `<p><strong>Current: ${data.soil.ph.toFixed(2)}</strong><br>Status: ${data.soil.ph >= 6.0 && data.soil.ph <= 7.5 ? 'Optimal' : 'Needs Adjustment'}</p>`;
-          break;
-        default:
-          alt.innerHTML = '<p>📊 Data visualization placeholder</p>';
-      }
-    });
-  }
-
-  updateWeatherData(data) {
-    if (!data.weather) return;
-
-    // Current weather
-    this.updateElement('currentTemp', `${Math.round(data.weather.temperature)}°C`);
-    this.updateElement('weatherDesc', data.weather.description);
-    this.updateElement('windSpeed', data.weather.windSpeed.toFixed(1));
-    this.updateElement('visibility', data.weather.visibility.toFixed(1));
-    this.updateElement('uvIndex', data.weather.uvIndex);
-
-    // Weather icon
-    const iconElement = document.getElementById('currentWeatherIcon');
-    if (iconElement) {
-      iconElement.textContent = this.getWeatherIcon(data.weather.description);
-    }
-
-    // Update location
+    // Location and Status
     if (data.location) {
       this.updateElement('locationName', data.location.city);
-    }
-
-    // Forecast
-    if (data.forecast) {
-      this.updateForecast(data.forecast);
-    }
-  }
-
-  updateForecast(forecast) {
-    const container = document.getElementById('forecastContainer');
-    if (!container) return;
-
-    container.innerHTML = forecast.map(day => `
-      <div class="forecast-card">
-        <div class="forecast-day">${day.date}</div>
-        <div class="forecast-icon">${this.getWeatherIcon(day.description)}</div>
-        <div class="forecast-temp">${day.temperature.max}°/${day.temperature.min}°</div>
-        <div class="forecast-rain">${day.rainfall}mm</div>
-      </div>
-    `).join('');
-  }
-
-  updateIrrigationData(data) {
-    if (!data.soil || !data.cropHealth) return;
-
-    const moisture = data.soil.moisture;
-    this.updateElement('irrigationSoilMoisture', `${moisture.toFixed(1)}%`);
-
-    // Update irrigation status
-    const statusElement = document.getElementById('irrigationStatus');
-    if (statusElement) {
-      if (moisture < 25) {
-        statusElement.textContent = 'Irrigation Required';
-        statusElement.parentElement.querySelector('.indicator-dot').className = 'indicator-dot error';
-      } else if (moisture < 40) {
-        statusElement.textContent = 'Monitor Closely';
-        statusElement.parentElement.querySelector('.indicator-dot').className = 'indicator-dot warning';
-      } else {
-        statusElement.textContent = 'Optimal Level';
-        statusElement.parentElement.querySelector('.indicator-dot').className = 'indicator-dot';
-      }
-    }
-
-    // Update recommendations
-    this.updateRecommendations(data.cropHealth.recommendations, 'irrigationRecommendations');
-  }
-
-  updateFertilizerData(data) {
-    if (!data.soil) return;
-
-    // Update nutrient bars
-    this.updateNutrientBar('nitrogen', data.soil.nitrogen);
-    this.updateNutrientBar('phosphorus', data.soil.phosphorus);
-    this.updateNutrientBar('potassium', data.soil.potassium);
-
-    // Update recommendations
-    const recommendations = this.generateFertilizerRecommendations(data.soil);
-    this.updateRecommendations(recommendations, 'fertilizerRecommendations');
-  }
-
-  updateNutrientBar(nutrient, value) {
-    const fill = document.getElementById(`${nutrient}Fill`);
-    const valueElement = document.getElementById(`${nutrient}Value`);
-    
-    if (fill) {
-      fill.style.width = `${Math.min(100, Math.max(0, value))}%`;
+      this.updateElement('connectionStatus', 'Connected');
+      const statusEl = document.getElementById('connectionStatus');
+      if (statusEl) statusEl.className = 'connection-status connected';
     }
     
-    if (valueElement) {
-      valueElement.textContent = `${Math.round(value)}%`;
-    }
-  }
-
-  updateCropHealthData(data) {
-    if (!data.cropHealth || !this.hasAccess('crop-health')) return;
-
-    // Update health score
-    this.updateElement('healthScoreValue', `${Math.round(data.cropHealth.score)}%`);
-    this.updateElement('healthStatus', this.getHealthStatus(data.cropHealth.score));
-
-    // Update growth information
-    this.updateElement('growthStage', data.cropHealth.growthStage || 'N/A');
-    this.updateElement('daysFromPlanting', `${data.cropHealth.daysFromPlanting || 0} days`);
-    this.updateElement('expectedHarvest', `${data.cropHealth.expectedHarvest || 0} days`);
-
-    // Update health score chart
-    if (this.chartsAvailable) {
-      this.updateHealthScoreChart(data.cropHealth.score);
-    }
-
-    // Update health factors
-    this.updateHealthFactors(data.cropHealth.factors);
-  }
-
-  updatePredictionsData(data) {
-    if (!data.yieldPrediction || !this.hasAccess('predictions')) return;
-
-    // Yield prediction
-    this.updateElement('yieldPredictionValue', `${data.yieldPrediction.perHectare} kg/ha`);
-    this.updateElement('yieldConfidence', `${data.yieldPrediction.confidence}%`);
-
-    // Update yield factors
-    const factorsContainer = document.getElementById('yieldFactors');
-    if (factorsContainer) {
-      factorsContainer.innerHTML = Object.entries(data.yieldPrediction.factors)
-        .map(([key, value]) => `
-          <div class="factor-item">
-            <span>${key.charAt(0).toUpperCase() + key.slice(1)}:</span>
-            <span>${value}%</span>
-          </div>
-        `).join('');
-    }
-
-    // Weather impact
-    this.updateWeatherImpact(data);
-
-    // AI recommendations
-    this.updateAIRecommendations(data);
-  }
-
-  updateReportsData(data) {
-    if (!this.hasAccess('reports')) return;
+    // Populate ALL Sections
+    this.populateAllSectionsComplete(data);
     
-    // Update report charts
-    if (this.chartsAvailable) {
-      this.updateReportCharts(data);
-    }
-
-    // Update metrics
-    if (data.historical) {
-      const avgMoisture = data.historical.soilMoisture.reduce((a, b) => a + b, 0) / 
-        data.historical.soilMoisture.length;
-      this.updateElement('avgMoisture', `${avgMoisture.toFixed(1)}%`);
-    }
-    
-    this.updateElement('irrigationEfficiency', '87%');
-    this.updateElement('nutrientBalance', 'Good');
+    console.log('✅ Complete dashboard populated');
   }
 
-  populateAllSectionDetails(data) {
-    // Populate Sensors Section Details
+  populateAllSectionsComplete(data) {
+    // Sensors Section
     if (data.weather && data.soil) {
-      this.updateElement('sensorTemp', `${Math.round(data.weather.temperature)}°C`);
-      this.updateElement('sensorMoisture', `${data.soil.moisture.toFixed(1)}%`);
+      this.updateElement('sensorTemp', Math.round(data.weather.temperature) + '°C');
+      this.updateElement('sensorMoisture', data.soil.moisture.toFixed(1) + '%');
       
       if (this.hasAccess('sensors-advanced')) {
-        this.updateElement('sensorHumidity', `${data.weather.humidity}%`);
+        this.updateElement('sensorHumidity', data.weather.humidity + '%');
         this.updateElement('sensorPH', data.soil.ph.toFixed(2));
       }
       
-      // Update trends
       this.updateTrend('sensorTempTrend', data.weather.temperature, 25);
       this.updateTrend('sensorMoistureTrend', data.soil.moisture, 40);
       
@@ -938,118 +1155,159 @@ class SmartFarmingDashboard {
       }
     }
     
-    // Populate Weather Section Details
+    // Weather Section
     if (data.weather) {
-      this.updateElement('currentTemp', `${Math.round(data.weather.temperature)}°C`);
+      this.updateElement('currentTemp', Math.round(data.weather.temperature) + '°C');
       this.updateElement('weatherDesc', data.weather.description);
       this.updateElement('windSpeed', data.weather.windSpeed.toFixed(1));
       this.updateElement('visibility', data.weather.visibility.toFixed(1));
       this.updateElement('uvIndex', data.weather.uvIndex);
+      this.updateElement('currentWeatherIcon', this.getWeatherIcon(data.weather.description));
       
-      const iconElement = document.getElementById('currentWeatherIcon');
-      if (iconElement) iconElement.textContent = this.getWeatherIcon(data.weather.description);
+      this.populateWeatherForecast(data);
     }
     
-    // Populate Irrigation Section Details
+    // Irrigation Section
     if (data.soil) {
-      this.updateElement('irrigationSoilMoisture', `${data.soil.moisture.toFixed(1)}%`);
+      this.updateElement('irrigationSoilMoisture', data.soil.moisture.toFixed(1) + '%');
+      this.updateElement('irrigationStatus', 
+        data.soil.moisture < 25 ? 'Irrigation Required' : 
+        data.soil.moisture < 40 ? 'Monitor Closely' : 'Optimal Level');
       
-      const statusElement = document.getElementById('irrigationStatus');
-      if (statusElement) {
-        if (data.soil.moisture < 25) {
-          statusElement.textContent = 'Irrigation Required';
-        } else if (data.soil.moisture < 40) {
-          statusElement.textContent = 'Monitor Closely';
-        } else {
-          statusElement.textContent = 'Optimal Level';
-        }
+      const recContainer = document.getElementById('irrigationRecommendations');
+      if (recContainer) {
+        recContainer.innerHTML = `
+          <div class="recommendation-card priority-medium">
+            <div class="rec-type">IRRIGATION</div>
+            <div class="rec-message">Soil moisture at ${data.soil.moisture.toFixed(1)}% - within acceptable range</div>
+            <div class="rec-action">Next irrigation recommended in 2-3 days based on weather forecast</div>
+          </div>
+        `;
       }
     }
     
-    // Populate Fertilizer Section Details
+    // Fertilizer Section
     if (data.soil) {
-      this.updateNutrientBar('nitrogen', data.soil.nitrogen);
-      this.updateNutrientBar('phosphorus', data.soil.phosphorus);
-      this.updateNutrientBar('potassium', data.soil.potassium);
+      ['nitrogen', 'phosphorus', 'potassium'].forEach(nutrient => {
+        const value = data.soil[nutrient] || Math.random() * 40 + 40;
+        const fill = document.getElementById(`${nutrient}Fill`);
+        const valueEl = document.getElementById(`${nutrient}Value`);
+        
+        if (fill) fill.style.width = value + '%';
+        if (valueEl) valueEl.textContent = Math.round(value) + '%';
+      });
+      
+      const fertRecContainer = document.getElementById('fertilizerRecommendations');
+      if (fertRecContainer) {
+        fertRecContainer.innerHTML = `
+          <div class="recommendation-card priority-low">
+            <div class="rec-type">NUTRIENT STATUS</div>
+            <div class="rec-message">Current nutrient levels are balanced</div>
+            <div class="rec-action">Continue regular fertilization schedule</div>
+          </div>
+        `;
+      }
     }
     
-    // Populate Crop Health Section Details
+    // Crop Health Section - PRO+ only
     if (data.cropHealth && this.hasAccess('crop-health')) {
-      this.updateElement('healthScoreValue', `${Math.round(data.cropHealth.score)}%`);
-      this.updateElement('healthStatus', this.getHealthStatus(data.cropHealth.score));
+      this.updateElement('healthScoreValue', Math.round(data.cropHealth.score) + '%');
+      this.updateElement('healthStatus', 
+        data.cropHealth.score > 80 ? 'Excellent' : data.cropHealth.score > 60 ? 'Good' : 'Fair');
       this.updateElement('growthStage', data.cropHealth.growthStage || 'Vegetative Growth');
-      this.updateElement('daysFromPlanting', `${data.cropHealth.daysFromPlanting || 45} days`);
-      this.updateElement('expectedHarvest', `${data.cropHealth.expectedHarvest || 75} days`);
+      this.updateElement('daysFromPlanting', (data.cropHealth.daysFromPlanting || 45) + ' days');
+      this.updateElement('expectedHarvest', (data.cropHealth.expectedHarvest || 75) + ' days');
       
       this.updateHealthFactors(data.cropHealth.factors);
     }
     
-    // Populate Predictions Section Details
+    // Reports Section - PREMIUM only
+    if (this.hasAccess('reports')) {
+      this.updateElement('avgMoisture', data.soil?.moisture.toFixed(1) + '%' || '33.2%');
+      this.updateElement('irrigationEfficiency', '92%');
+      this.updateElement('nutrientBalance', 'Excellent');
+    }
+    
+    // Predictions Section - PREMIUM only
     if (data.yieldPrediction && this.hasAccess('predictions')) {
-      this.updateElement('yieldPredictionValue', `${data.yieldPrediction.perHectare} kg/ha`);
-      this.updateElement('yieldConfidence', `${data.yieldPrediction.confidence}%`);
+      this.updateElement('yieldPredictionValue', data.yieldPrediction.perHectare + ' kg/ha');
+      this.updateElement('yieldConfidence', data.yieldPrediction.confidence + '%');
       
       const factorsContainer = document.getElementById('yieldFactors');
       if (factorsContainer) {
         factorsContainer.innerHTML = Object.entries(data.yieldPrediction.factors)
           .map(([key, value]) => `
             <div class="factor-item">
-              <span>${key.charAt(0).toUpperCase() + key.slice(1)}:</span>
+              <span>${key.charAt(0).toUpperCase() + key.slice(1)}</span>
               <span>${value}%</span>
             </div>
           `).join('');
       }
     }
     
-    // Populate Weather Impact
-    this.updateWeatherImpactDetails(data);
+    this.updateWeatherImpact(data);
+    this.updateAIRecommendations(data);
+  }
+
+  populateWeatherForecast(data) {
+    const forecast = data.forecast || this.generateFallbackForecast();
+    const container = document.getElementById('forecastContainer');
     
-    // Populate AI Recommendations
-    this.updateAIRecommendationsDetails(data);
-    
-    // Populate Forecast
-    if (data.forecast) {
-      this.updateForecast(data.forecast);
+    if (container) {
+      container.innerHTML = forecast.slice(0, 7).map(day => `
+        <div class="forecast-card">
+          <div class="forecast-day">${day.date}</div>
+          <div class="forecast-icon">${this.getWeatherIcon(day.description || 'clear sky')}</div>
+          <div class="forecast-temp">${day.temperature?.max || '32'}°/${day.temperature?.min || '24'}°</div>
+          <div class="forecast-rain">${day.rainfall || 0}mm</div>
+        </div>
+      `).join('');
     }
   }
 
-  updateWeatherImpactDetails(data) {
-    const weatherImpact = document.getElementById('weatherImpact');
-    if (!weatherImpact || !data.weather) return;
+  generateFallbackForecast() {
+    return [
+      { date: 'Mon', temperature: { max: 32, min: 24 }, rainfall: 0, description: 'clear sky' },
+      { date: 'Tue', temperature: { max: 29, min: 22 }, rainfall: 2, description: 'light rain' },
+      { date: 'Wed', temperature: { max: 28, min: 21 }, rainfall: 5, description: 'scattered clouds' },
+      { date: 'Thu', temperature: { max: 26, min: 20 }, rainfall: 8, description: 'light rain' },
+      { date: 'Fri', temperature: { max: 30, min: 23 }, rainfall: 0, description: 'clear sky' },
+      { date: 'Sat', temperature: { max: 31, min: 24 }, rainfall: 1, description: 'few clouds' },
+      { date: 'Sun', temperature: { max: 33, min: 25 }, rainfall: 0, description: 'clear sky' }
+    ];
+  }
+
+  updateWeatherImpact(data) {
+    const container = document.getElementById('weatherImpact');
+    if (!container) return;
+
+    const impact = data.weather.temperature > 30 ? 'Challenging' : 'Positive';
     
-    const tempImpact = data.weather.temperature >= 20 && data.weather.temperature <= 28 ? 'Positive' : 'Negative';
-    const humidityImpact = data.weather.humidity >= 50 && data.weather.humidity <= 70 ? 'Positive' : 'Neutral';
-    const overallImpact = tempImpact === 'Positive' && humidityImpact === 'Positive' ? 'Positive' : 'Moderate';
-    
-    weatherImpact.innerHTML = `
+    container.innerHTML = `
       <div class="impact-summary">
-        <h4>Overall Impact: ${overallImpact}</h4>
-        <p>Current weather conditions in ${data.location?.city || 'your area'} are ${data.weather.temperature > 30 ? 'challenging due to high temperatures' : 'favorable for crop growth'}.</p>
+        <h4>Overall Impact: ${impact}</h4>
+        <p>Current weather conditions in ${data.location?.city || 'your area'} ${data.weather.temperature > 30 ? 'require careful monitoring due to high temperatures' : 'are favorable for crop growth'}.</p>
       </div>
       <div class="impact-factors">
         <div class="impact-factor">
-          <span class="factor-name">Temperature (${Math.round(data.weather.temperature)}°C):</span>
-          <span class="factor-impact ${tempImpact.toLowerCase()}">${tempImpact}</span>
+          <span class="factor-name">Temperature: ${Math.round(data.weather.temperature)}°C</span>
+          <span class="factor-impact ${data.weather.temperature > 30 ? 'negative' : 'positive'}">${data.weather.temperature > 30 ? 'High' : 'Good'}</span>
         </div>
         <div class="impact-factor">
-          <span class="factor-name">Humidity (${data.weather.humidity}%):</span>
-          <span class="factor-impact ${humidityImpact.toLowerCase()}">${humidityImpact}</span>
+          <span class="factor-name">Humidity: ${data.weather.humidity}%</span>
+          <span class="factor-impact neutral">Moderate</span>
         </div>
         <div class="impact-factor">
-          <span class="factor-name">Soil Moisture:</span>
+          <span class="factor-name">Soil Moisture</span>
           <span class="factor-impact positive">Good</span>
         </div>
       </div>
     `;
   }
 
-  updateAIRecommendationsDetails(data) {
-    const aiRecommendations = document.getElementById('aiRecommendations');
-    if (!aiRecommendations || !this.hasAccess('predictions')) return;
-    
+  updateAIRecommendations(data) {
     let recommendations = [];
     
-    // Smart recommendations based on real data
     if (data.weather?.temperature > 30) {
       recommendations.push({
         icon: '🌡️',
@@ -1061,9 +1319,9 @@ class SmartFarmingDashboard {
     
     if (data.cropHealth?.score > 80) {
       recommendations.push({
-        icon: '🤖',
+        icon: '🌱',
         title: 'Maintain Excellence',
-        description: `Crop health is excellent at ${Math.round(data.cropHealth.score)}%. Continue current management practices for optimal yield.`,
+        description: `Crop health is excellent at ${Math.round(data.cropHealth.score)}%. Continue current management practices.`,
         priority: 'Low'
       });
     }
@@ -1072,533 +1330,172 @@ class SmartFarmingDashboard {
       recommendations.push({
         icon: '💧',
         title: 'Smart Irrigation',
-        description: `Soil moisture at ${data.soil.moisture.toFixed(1)}%. Monitor closely and irrigate within 24-48 hours if no rainfall expected.`,
+        description: `Soil moisture at ${data.soil.moisture.toFixed(1)}%. Monitor closely and irrigate within 24-48 hours.`,
         priority: 'Medium'
       });
     }
     
-    if (data.yieldPrediction) {
-      recommendations.push({
-        icon: '📈',
-        title: 'Yield Optimization',
-        description: `Based on current conditions, predicted yield is ${data.yieldPrediction.perHectare} kg/ha with ${data.yieldPrediction.confidence}% confidence.`,
-        priority: 'Low'
-      });
-    }
+    recommendations.push({
+      icon: '📈',
+      title: 'Yield Optimization',
+      description: `Based on current conditions, predicted yield is ${data.yieldPrediction?.perHectare || 4200} kg/ha.`,
+      priority: 'Low'
+    });
     
-    // Always add at least one recommendation
-    if (recommendations.length === 0) {
-      recommendations.push({
-        icon: '✅',
-        title: 'System Optimal',
-        description: 'All parameters are within normal ranges. Continue monitoring for best results.',
-        priority: 'Low'
-      });
-    }
-    
-    aiRecommendations.innerHTML = recommendations.map(rec => `
-      <div class="ai-recommendation">
-        <div class="ai-rec-header">
-          <span class="ai-rec-icon">${rec.icon}</span>
-          <strong>${rec.title}</strong>
+    const container = document.getElementById('aiRecommendations');
+    if (container) {
+      container.innerHTML = recommendations.map(rec => `
+        <div class="ai-recommendation">
+          <div class="ai-rec-header">
+            <span class="ai-rec-icon">${rec.icon}</span>
+            <strong>${rec.title}</strong>
+          </div>
+          <p>${rec.description}</p>
+          <div class="ai-rec-priority">Priority: ${rec.priority}</div>
         </div>
-        <p>${rec.description}</p>
-        <div class="ai-rec-priority">Priority: ${rec.priority}</div>
-      </div>
-    `).join('');
+      `).join('');
+    }
   }
 
-  // Chart Initialization
-  initializeAllCharts() {
-    if (!this.chartsAvailable) {
-      console.log('⚠️ Charts not available, skipping chart initialization');
+  getWeatherIcon(description) {
+    const icons = {
+      'clear sky': '☀️',
+      'few clouds': '🌤️',
+      'scattered clouds': '⛅',
+      'broken clouds': '☁️',
+      'overcast clouds': '☁️',
+      'light rain': '🌦️',
+      'moderate rain': '🌧️',
+      'heavy rain': '⛈️',
+      'thunderstorm': '⛈️',
+      'snow': '🌨️',
+      'mist': '🌫️',
+      'haze': '🌫️',
+      'partly cloudy': '⛅'
+    };
+    return icons[description] || '🌤️';
+  }
+
+  // FIXED: Export Data Functionality
+  setupExportButton() {
+    const exportBtns = [
+      document.getElementById('quickExportBtn'),
+      document.querySelector('[onclick*="export"]'),
+      ...document.querySelectorAll('button')
+    ].filter(btn => btn && (btn.textContent.includes('Export') || btn.id?.includes('export')));
+
+    exportBtns.forEach(exportBtn => {
+      if (exportBtn) {
+        console.log('📊 Setting up export button:', exportBtn.textContent);
+        
+        exportBtn.onclick = null;
+        exportBtn.removeAttribute('onclick');
+        
+        exportBtn.addEventListener('click', () => {
+          console.log('📊 Export button clicked, checking access...');
+          console.log('Current plan:', this.currentPlan);
+          console.log('Has export-csv:', this.hasAccess('export-csv'));
+          console.log('Has export-all:', this.hasAccess('export-all'));
+          
+          if (this.hasAccess('export-csv') || this.hasAccess('export-all')) {
+            this.exportFarmData();
+          } else {
+            console.log('❌ No export access, showing upgrade modal');
+            this.showUpgradeModal('pro');
+          }
+        });
+      }
+    });
+  }
+
+  exportFarmData() {
+    console.log('📊 Exporting farm data...');
+    
+    const data = this.data.current;
+    if (!data) {
+      this.showNotification('❌ No data available for export', 'error');
       return;
     }
     
-    console.log('🎨 Initializing charts...');
-    
-    try {
-      this.initializeSensorCharts();
-      this.initializeWeatherCharts();
-      this.initializeReportCharts();
-      this.initializeHealthChart();
-      console.log('✅ Charts initialized successfully');
-    } catch (error) {
-      console.error('❌ Chart initialization failed:', error);
-      this.chartsAvailable = false;
-      this.hideChartElements();
-    }
-  }
-
-  initializeSensorCharts() {
-    if (!this.chartsAvailable || typeof Chart === 'undefined') return;
-
-    // Temperature Chart
-    const tempCtx = document.getElementById('temperatureChart')?.getContext('2d');
-    if (tempCtx) {
-      this.charts.temperature = new Chart(tempCtx, {
-        type: 'bar',
-        data: {
-          labels: ['Temperature'],
-          datasets: [{
-            label: 'Temperature (°C)',
-            data: [25],
-            backgroundColor: '#4CAF50',
-            borderRadius: 4,
-          }],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: { y: { min: 0, max: 50 } },
-          plugins: { legend: { display: false } }
-        }
-      });
-    }
-
-    // Soil Moisture Chart
-    const moistureCtx = document.getElementById('soilMoistureChart')?.getContext('2d');
-    if (moistureCtx) {
-      this.charts.soilMoisture = new Chart(moistureCtx, {
-        type: 'doughnut',
-        data: {
-          labels: ['Moisture', 'Dry'],
-          datasets: [{
-            data: [40, 60],
-            backgroundColor: ['#2a9d8f', '#e9ecef'],
-            borderWidth: 0,
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: '70%',
-          plugins: { legend: { display: false } }
-        }
-      });
-    }
-
-    // Humidity Chart
-    const humidityCtx = document.getElementById('humidityChart')?.getContext('2d');
-    if (humidityCtx) {
-      this.charts.humidity = new Chart(humidityCtx, {
-        type: 'line',
-        data: {
-          labels: ['Now'],
-          datasets: [{
-            label: 'Humidity %',
-            data: [60],
-            fill: true,
-            backgroundColor: 'rgba(42,157,143,0.1)',
-            borderColor: '#2a9d8f',
-            tension: 0.4,
-          }],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: { y: { min: 0, max: 100 } },
-          plugins: { legend: { display: false } }
-        }
-      });
-    }
-
-    // pH Chart
-    const phCtx = document.getElementById('phChart')?.getContext('2d');
-    if (phCtx) {
-      this.charts.ph = new Chart(phCtx, {
-        type: 'bar',
-        data: {
-          labels: ['pH Level'],
-          datasets: [{
-            label: 'pH',
-            data: [6.8],
-            backgroundColor: '#e9c46a',
-            borderRadius: 4,
-          }],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: { y: { min: 4, max: 10 } },
-          plugins: { legend: { display: false } }
-        }
-      });
-    }
-
-    // Historical Chart
-    const historicalCtx = document.getElementById('historicalChart')?.getContext('2d');
-    if (historicalCtx) {
-      this.charts.historical = new Chart(historicalCtx, {
-        type: 'line',
-        data: {
-          labels: [],
-          datasets: [
-            {
-              label: 'Temperature (°C)',
-              data: [],
-              borderColor: '#e76f51',
-              backgroundColor: 'rgba(231,111,81,0.1)',
-              yAxisID: 'y',
-            },
-            {
-              label: 'Humidity (%)',
-              data: [],
-              borderColor: '#2a9d8f',
-              backgroundColor: 'rgba(42,157,143,0.1)',
-              yAxisID: 'y1',
-            },
-            {
-              label: 'Soil Moisture (%)',
-              data: [],
-              borderColor: '#264653',
-              backgroundColor: 'rgba(38,70,83,0.1)',
-              yAxisID: 'y1',
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: {
-            mode: 'index',
-            intersect: false,
-          },
-          scales: {
-            y: {
-              type: 'linear',
-              display: true,
-              position: 'left',
-              min: 0,
-              max: 50,
-              title: { display: true, text: 'Temperature (°C)' }
-            },
-            y1: {
-              type: 'linear',
-              display: true,
-              position: 'right',
-              min: 0,
-              max: 100,
-              title: { display: true, text: 'Percentage (%)' },
-              grid: {
-                drawOnChartArea: false,
-              },
-            }
-          }
-        }
-      });
-    }
-  }
-
-  initializeWeatherCharts() {
-    const weatherCtx = document.getElementById('weatherChart')?.getContext('2d');
-    if (weatherCtx) {
-      this.charts.weather = new Chart(weatherCtx, {
-        data: {
-          labels: [],
-          datasets: [
-            {
-              type: 'bar',
-              label: 'Rainfall (mm)',
-              data: [],
-              backgroundColor: 'rgba(54,162,235,0.6)',
-              yAxisID: 'y1',
-            },
-            {
-              type: 'line',
-              label: 'Temperature (°C)',
-              data: [],
-              borderColor: '#e76f51',
-              backgroundColor: 'rgba(231,111,81,0.1)',
-              yAxisID: 'y',
-              tension: 0.3,
-              pointRadius: 4,
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              type: 'linear',
-              position: 'left',
-              min: 10,
-              max: 40,
-              title: { display: true, text: 'Temperature (°C)' }
-            },
-            y1: {
-              type: 'linear',
-              position: 'right',
-              min: 0,
-              max: 20,
-              grid: { drawOnChartArea: false },
-              title: { display: true, text: 'Rainfall (mm)' }
-            }
-          }
-        }
-      });
-    }
-  }
-
-  initializeReportCharts() {
-    // Yield Chart
-    const yieldCtx = document.getElementById('yieldChart')?.getContext('2d');
-    if (yieldCtx) {
-      this.charts.yield = new Chart(yieldCtx, {
-        type: 'line',
-        data: {
-          labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
-          datasets: [{
-            label: 'Growth Progress (%)',
-            data: [15, 28, 42, 56, 68, 75],
-            borderColor: '#2a9d8f',
-            backgroundColor: 'rgba(42,157,143,0.1)',
-            tension: 0.3,
-            pointRadius: 4,
-          }],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: { y: { min: 0, max: 100 } }
-        }
-      });
-    }
-
-    // Cost Savings Chart
-    const costCtx = document.getElementById('costSavingsChart')?.getContext('2d');
-    if (costCtx) {
-      this.charts.costSavings = new Chart(costCtx, {
-        type: 'bar',
-        data: {
-          labels: ['Water', 'Fertilizer', 'Labor', 'Energy'],
-          datasets: [{
-            label: 'Savings (%)',
-            data: [35, 28, 45, 22],
-            backgroundColor: ['#2a9d8f', '#e9c46a', '#f4a261', '#e76f51'],
-            borderRadius: 6,
-          }]
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: {
-              min: 0,
-              max: 50,
-              title: { display: true, text: 'Savings %' }
-            }
-          }
-        }
-      });
-    }
-
-    // Water Usage Chart
-    const waterCtx = document.getElementById('waterUsageChart')?.getContext('2d');
-    if (waterCtx) {
-      this.charts.waterUsage = new Chart(waterCtx, {
-        type: 'line',
-        data: {
-          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-          datasets: [{
-            label: 'Water Usage (L)',
-            data: [1200, 1150, 1300, 1100, 1000, 950],
-            borderColor: '#2196F3',
-            backgroundColor: 'rgba(33,150,243,0.1)',
-            tension: 0.3,
-            fill: true,
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } }
-        }
-      });
-    }
-  }
-
-  initializeHealthChart() {
-    const healthCtx = document.getElementById('healthScoreChart')?.getContext('2d');
-    if (healthCtx) {
-      this.charts.healthScore = new Chart(healthCtx, {
-        type: 'doughnut',
-        data: {
-          datasets: [{
-            data: [70, 30],
-            backgroundColor: ['#4CAF50', '#e9ecef'],
-            borderWidth: 0,
-          }]
-        },
-        options: {
-          responsive: false,
-          maintainAspectRatio: false,
-          cutout: '80%',
-          plugins: { legend: { display: false } },
-          animation: { duration: 1000 }
-        }
-      });
-    }
-  }
-
-  // Chart Update Methods
-  updateSensorCharts(data) {
-    if (!this.chartsAvailable) return;
-
-    // Temperature Chart
-    if (this.charts.temperature) {
-      this.charts.temperature.data.datasets[0].data = [data.weather.temperature];
-      this.charts.temperature.data.datasets[0].backgroundColor = 
-        this.getTemperatureColor(data.weather.temperature);
-      this.charts.temperature.update('none');
-    }
-
-    // Soil Moisture Chart
-    if (this.charts.soilMoisture) {
-      const moisture = data.soil.moisture;
-      this.charts.soilMoisture.data.datasets[0].data = [moisture, 100 - moisture];
-      this.charts.soilMoisture.update('none');
-    }
-
-    // Humidity Chart
-    if (this.charts.humidity && data.historical) {
-      const maxPoints = 10;
-      const humidity = data.historical.humidity.slice(-maxPoints);
-      const timestamps = data.historical.timestamps.slice(-maxPoints)
-        .map(t => new Date(t).toLocaleTimeString());
-      
-      this.charts.humidity.data.labels = timestamps;
-      this.charts.humidity.data.datasets[0].data = humidity;
-      this.charts.humidity.update('none');
-    }
-
-    // pH Chart
-    if (this.charts.ph) {
-      this.charts.ph.data.datasets[0].data = [data.soil.ph];
-      this.charts.ph.update('none');
-    }
-
-    // Historical Chart
-    if (this.charts.historical && data.historical) {
-      const maxPoints = 15;
-      const timestamps = data.historical.timestamps.slice(-maxPoints)
-        .map(t => new Date(t).toLocaleTimeString());
-      
-      this.charts.historical.data.labels = timestamps;
-      this.charts.historical.data.datasets[0].data = data.historical.temperature.slice(-maxPoints);
-      this.charts.historical.data.datasets[1].data = data.historical.humidity.slice(-maxPoints);
-      this.charts.historical.data.datasets[2].data = data.historical.soilMoisture.slice(-maxPoints);
-      this.charts.historical.update('none');
-    }
-  }
-
-  updateHealthScoreChart(score) {
-    if (!this.charts.healthScore) return;
-
-    this.charts.healthScore.data.datasets[0].data = [score, 100 - score];
-    this.charts.healthScore.data.datasets[0].backgroundColor = [
-      this.getHealthColor(score),
-      '#e9ecef'
+    // Generate CSV data
+    const csvData = [
+      ['Metric', 'Value', 'Status', 'Timestamp']
     ];
-    this.charts.healthScore.update('none');
+    
+    // Basic data (available for export-csv)
+    if (data.weather) {
+      csvData.push(['Temperature', data.weather.temperature + '°C', 'Normal', new Date().toISOString()]);
+      csvData.push(['Humidity', data.weather.humidity + '%', 'Normal', new Date().toISOString()]);
+      csvData.push(['Wind Speed', data.weather.windSpeed + ' km/h', 'Normal', new Date().toISOString()]);
+    }
+    
+    if (data.soil) {
+      csvData.push(['Soil Moisture', data.soil.moisture + '%', 'Good', new Date().toISOString()]);
+      csvData.push(['pH Level', data.soil.ph, 'Optimal', new Date().toISOString()]);
+      csvData.push(['Nitrogen', data.soil.nitrogen + '%', 'Good', new Date().toISOString()]);
+      csvData.push(['Phosphorus', data.soil.phosphorus + '%', 'Good', new Date().toISOString()]);
+      csvData.push(['Potassium', data.soil.potassium + '%', 'Good', new Date().toISOString()]);
+    }
+    
+    // Premium data (only if user has export-all access)
+    if (this.hasAccess('export-all') && data.cropHealth) {
+      csvData.push(['Crop Health Score', data.cropHealth.score + '%', 'Excellent', new Date().toISOString()]);
+      csvData.push(['Growth Stage', data.cropHealth.growthStage, 'On Track', new Date().toISOString()]);
+      csvData.push(['Days from Planting', data.cropHealth.daysFromPlanting + ' days', 'Normal', new Date().toISOString()]);
+    }
+    
+    if (this.hasAccess('export-all') && data.yieldPrediction) {
+      csvData.push(['Predicted Yield', data.yieldPrediction.perHectare + ' kg/ha', 
+                    data.yieldPrediction.confidence + '% confidence', new Date().toISOString()]);
+    }
+    
+    // Create CSV string
+    const csvContent = csvData.map(row => row.join(',')).join('\n');
+    
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `farm-data-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    this.showNotification('✅ Farm data exported successfully!', 'success');
+    console.log('✅ CSV file downloaded successfully');
   }
 
-  updateReportCharts(data) {
-    // Update yield chart with progressive data
-    if (this.charts.yield) {
-      const weeklyProgress = [15, 28, 42, 56, 68, 75];
-      this.charts.yield.data.datasets[0].data = weeklyProgress;
-      this.charts.yield.update('none');
-    }
-
-    // Update water usage chart
-    if (this.charts.waterUsage && data.historical) {
-      const monthlyUsage = [1200, 1150, 1300, 1100, 1000, 950];
-      this.charts.waterUsage.data.datasets[0].data = monthlyUsage;
-      this.charts.waterUsage.update('none');
-    }
-
-    // Update weather chart
-    if (this.charts.weather && data.forecast) {
-      const labels = data.forecast.map(day => day.date);
-      const temperatures = data.forecast.map(day => day.temperature.avg);
-      const rainfall = data.forecast.map(day => day.rainfall);
-
-      this.charts.weather.data.labels = labels;
-      this.charts.weather.data.datasets[0].data = rainfall;
-      this.charts.weather.data.datasets[1].data = temperatures;
-      this.charts.weather.update('none');
-    }
-  }
-
-  // Event Listeners with Subscription Checks
+  // EVENT LISTENERS
   setupEventListeners() {
     console.log('🔧 Setting up event listeners...');
     
-    // Navigation with premium checks
     this.setupNavigation();
+    this.setupExportButton(); // Export button setup
 
-    // Refresh button
-    const refreshBtn = document.getElementById('refreshBtn');
-    if (refreshBtn) {
-      refreshBtn.addEventListener('click', () => {
-        console.log('🔄 Refresh clicked');
-        this.refreshData();
-      });
-    }
-
-    // Action buttons with premium checks
     const quickIrrigateBtn = document.getElementById('quickIrrigateBtn');
     if (quickIrrigateBtn) {
-      quickIrrigateBtn.addEventListener('click', () => {
+      quickIrrigateBtn.onclick = () => {
         this.showNotification('💧 Irrigation system activated!', 'success');
-        console.log('Irrigation activated');
-      });
+      };
     }
 
     const viewAlertsBtn = document.getElementById('viewAlertsBtn');
     if (viewAlertsBtn) {
-      viewAlertsBtn.addEventListener('click', () => {
-        console.log('View alerts clicked');
-        document.querySelector('[data-target="dashboard"]').click();
-      });
+      viewAlertsBtn.onclick = () => {
+        const dashboardBtn = document.querySelector('[data-target="dashboard"]');
+        if (dashboardBtn) dashboardBtn.click();
+      };
     }
 
-    const exportDataBtn = document.getElementById('exportDataBtn');
-    if (exportDataBtn) {
-      exportDataBtn.addEventListener('click', () => {
-        if (this.checkPremiumFeature('export')) {
-          this.exportData();
-        }
-      });
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+      refreshBtn.onclick = () => {
+        this.fetchInitialData();
+      };
     }
 
-    // Footer buttons
-    const helpBtn = document.getElementById('helpBtn');
-    if (helpBtn) {
-      helpBtn.addEventListener('click', () => {
-        alert('Help: Use navigation to switch sections. Click refresh to update data.');
-      });
-    }
-
-    const settingsBtn = document.getElementById('settingsBtn');
-    if (settingsBtn) {
-      settingsBtn.addEventListener('click', () => {
-        alert('Settings: Configure API keys and preferences (Feature coming soon)');
-      });
-    }
-
-    const aboutBtn = document.getElementById('aboutBtn');
-    if (aboutBtn) {
-      aboutBtn.addEventListener('click', () => {
-        alert('Smart Farming Dashboard v1.0 - Complete agricultural monitoring solution');
-      });
-    }
-
-    // Close modal when clicking outside
     window.onclick = (event) => {
       const modal = document.getElementById('upgradeModal');
       if (event.target === modal) {
@@ -1615,14 +1512,10 @@ class SmartFarmingDashboard {
     const navButtons = document.querySelectorAll('.nav-btn');
     const sections = document.querySelectorAll('.panel');
 
-    console.log('Found nav buttons:', navButtons.length);
-    console.log('Found panels:', sections.length);
-
     navButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         const target = btn.getAttribute('data-target');
         
-        // Check premium access for restricted sections
         if (btn.classList.contains('premium-required')) {
           if (target === 'crop-health' && !this.hasAccess('crop-health')) {
             this.showUpgradeModal('pro');
@@ -1634,75 +1527,40 @@ class SmartFarmingDashboard {
           }
         }
         
-        console.log('🔘 Navigation clicked:', target);
+        console.log('🔘 Navigation:', target);
         
-        // Update active button
         navButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         
-        // Show target section
         sections.forEach(section => {
           if (section.id === target) {
             section.classList.remove('hidden');
-            console.log('📺 Showing section:', target);
           } else {
             section.classList.add('hidden');
           }
         });
-
-        // Handle special section initialization
-        this.handleSectionChange(target);
       });
     });
     
     console.log('✅ Navigation setup complete');
   }
 
-  handleSectionChange(sectionId) {
-    console.log('🔄 Section changed to:', sectionId);
-    
-    // Initialize specific sections with current data
-    if (this.data.current) {
-      switch (sectionId) {
-        case 'sensors':
-          if (this.hasAccess('sensors-basic')) {
-            this.updateSensorData(this.data.current);
-          }
-          break;
-        case 'weather':
-          this.updateWeatherData(this.data.current);
-          break;
-        case 'irrigation':
-          this.updateIrrigationData(this.data.current);
-          break;
-        case 'fertilizer':
-          this.updateFertilizerData(this.data.current);
-          break;
-        case 'crop-health':
-          if (this.hasAccess('crop-health')) {
-            this.updateCropHealthData(this.data.current);
-          }
-          break;
-        case 'reports':
-          if (this.hasAccess('reports')) {
-            this.updateReportsData(this.data.current);
-          }
-          break;
-        case 'predictions':
-          if (this.hasAccess('predictions')) {
-            this.updatePredictionsData(this.data.current);
-          }
-          break;
-      }
-    }
-  }
-
-  // Utility Methods
+  // UTILITY METHODS
   updateElement(id, value) {
     const element = document.getElementById(id);
     if (element) {
       element.textContent = value;
     }
+  }
+
+  updateDateTime() {
+    const now = new Date();
+    this.updateElement('currentDateTime', now.toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }));
+    this.updateElement('lastUpdate', `Last updated: ${now.toLocaleTimeString()}`);
   }
 
   updateTrend(elementId, currentValue, referenceValue) {
@@ -1721,172 +1579,6 @@ class SmartFarmingDashboard {
       element.textContent = `${diff.toFixed(1)}`;
       element.className = 'sensor-trend down';
     }
-  }
-
-  getTemperatureColor(temp) {
-    if (temp < 15) return '#2196F3';
-    if (temp > 30) return '#f44336';
-    return '#4CAF50';
-  }
-
-  getHealthColor(score) {
-    if (score >= 80) return '#4CAF50';
-    if (score >= 60) return '#FF9800';
-    if (score >= 40) return '#f44336';
-    return '#9C27B0';
-  }
-
-  getTemperatureStatus(temp) {
-    if (temp < 15) return 'Too Cold';
-    if (temp > 30) return 'Too Hot';
-    return 'Optimal';
-  }
-
-  getMoistureStatus(moisture) {
-    if (moisture < 20) return 'Critical';
-    if (moisture < 30) return 'Low';
-    if (moisture > 70) return 'High';
-    return 'Good';
-  }
-
-  getHealthStatus(score) {
-    if (score >= 80) return 'Excellent';
-    if (score >= 60) return 'Good';
-    if (score >= 40) return 'Fair';
-    return 'Poor';
-  }
-
-  getWeatherIcon(description) {
-    const icons = {
-      'clear sky': '☀️',
-      'few clouds': '🌤️',
-      'scattered clouds': '⛅',
-      'broken clouds': '☁️',
-      'overcast clouds': '☁️',
-      'light rain': '🌦️',
-      'moderate rain': '🌧️',
-      'heavy rain': '⛈️',
-      'thunderstorm': '⛈️',
-      'snow': '❄️',
-      'mist': '🌫️',
-      'partly cloudy': '⛅'
-    };
-    return icons[description] || '🌤️';
-  }
-
-  updateDateTime() {
-    const element = document.getElementById('currentDateTime');
-    if (element) {
-      element.textContent = new Date().toLocaleString('en-IN', {
-        timeZone: 'Asia/Kolkata',
-        dateStyle: 'medium',
-        timeStyle: 'short'
-      });
-    }
-  }
-
-  // Recommendation Methods
-  updateRecommendations(recommendations, containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    if (!recommendations || recommendations.length === 0) {
-      container.innerHTML = '<p class="no-recommendations">No recommendations at this time ✅</p>';
-      return;
-    }
-
-    container.innerHTML = recommendations.map(rec => `
-      <div class="recommendation-card priority-${rec.priority.toLowerCase()}">
-        <div class="rec-type">${rec.type.toUpperCase()}</div>
-        <div class="rec-message">${rec.message}</div>
-        <div class="rec-action">${rec.action}</div>
-      </div>
-    `).join('');
-  }
-
-  generateFertilizerRecommendations(soil) {
-    const recommendations = [];
-
-    if (soil.nitrogen < 40) {
-      recommendations.push({
-        type: 'fertilizer',
-        priority: 'HIGH',
-        message: `Nitrogen level low at ${Math.round(soil.nitrogen)}%`,
-        action: 'Apply urea (46-0-0) at 120kg/ha within 3 days'
-      });
-    }
-
-    if (soil.phosphorus < 30) {
-      recommendations.push({
-        type: 'fertilizer',
-        priority: 'MEDIUM',
-        message: `Phosphorus below optimal at ${Math.round(soil.phosphorus)}%`,
-        action: 'Apply DAP (18-46-0) at 100kg/ha'
-      });
-    }
-
-    if (soil.potassium < 40) {
-      recommendations.push({
-        type: 'fertilizer',
-        priority: 'MEDIUM',
-        message: `Potassium deficiency at ${Math.round(soil.potassium)}%`,
-        action: 'Apply MOP (0-0-60) at 80kg/ha'
-      });
-    }
-
-    return recommendations;
-  }
-
-  updateAlerts(data) {
-    const container = document.getElementById('alertsContainer');
-    if (!container) return;
-
-    const alerts = this.generateAlerts(data);
-    
-    if (alerts.length === 0) {
-      container.innerHTML = '';
-      return;
-    }
-
-    container.innerHTML = alerts.map(alert => `
-      <div class="alert-card ${alert.type}">
-        <div>
-          <strong>${alert.title}</strong>
-          <p>${alert.message}</p>
-        </div>
-        <span class="alert-close" onclick="this.parentElement.remove()">&times;</span>
-      </div>
-    `).join('');
-  }
-
-  generateAlerts(data) {
-    const alerts = [];
-
-    if (data.soil?.moisture < 20) {
-      alerts.push({
-        type: 'critical',
-        title: 'Critical Soil Moisture',
-        message: `Soil moisture at ${data.soil.moisture.toFixed(1)}%. Immediate irrigation required.`
-      });
-    }
-
-    if (data.weather?.temperature > 35) {
-      alerts.push({
-        type: 'critical',
-        title: 'High Temperature Alert',
-        message: `Temperature at ${Math.round(data.weather.temperature)}°C. Risk of heat stress.`
-      });
-    }
-
-    if (data.cropHealth?.score < 50) {
-      alerts.push({
-        type: 'critical',
-        title: 'Poor Crop Health',
-        message: `Health score at ${Math.round(data.cropHealth.score)}%. Immediate attention required.`
-      });
-    }
-
-    return alerts;
   }
 
   updateHealthFactors(factors) {
@@ -1918,205 +1610,37 @@ class SmartFarmingDashboard {
     return units[factor] || '';
   }
 
-  updateWeatherImpact(data) {
-    const container = document.getElementById('weatherImpact');
-    if (!container) return;
-
-    const impact = this.calculateWeatherImpact(data);
-    container.innerHTML = `
-      <div class="impact-summary">
-        <h4>Overall Impact: ${impact.overall}</h4>
-        <p>${impact.description}</p>
-      </div>
-      <div class="impact-factors">
-        ${impact.factors.map(factor => `
-          <div class="impact-factor">
-            <span class="factor-name">${factor.name}:</span>
-            <span class="factor-impact ${factor.impact.toLowerCase()}">${factor.impact}</span>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-
-  calculateWeatherImpact(data) {
-    const factors = [];
-    let overallScore = 0;
-
-    // Temperature impact
-    if (data.weather.temperature >= 20 && data.weather.temperature <= 28) {
-      factors.push({ name: 'Temperature', impact: 'Positive' });
-      overallScore += 20;
-    } else {
-      factors.push({ name: 'Temperature', impact: 'Negative' });
-      overallScore -= 10;
-    }
-
-    // Humidity impact
-    if (data.weather.humidity >= 50 && data.weather.humidity <= 70) {
-      factors.push({ name: 'Humidity', impact: 'Positive' });
-      overallScore += 15;
-    } else {
-      factors.push({ name: 'Humidity', impact: 'Neutral' });
-    }
-
-    // Rainfall prediction from forecast
-    if (data.forecast && data.forecast.length > 0) {
-      const rainExpected = data.forecast.slice(0, 3).some(day => day.rainfall > 2);
-      factors.push({ 
-        name: 'Rainfall', 
-        impact: rainExpected ? 'Positive' : 'Neutral' 
-      });
-      if (rainExpected) overallScore += 15;
-    }
-
-    let overall = 'Neutral';
-    if (overallScore > 30) overall = 'Positive';
-    else if (overallScore < 0) overall = 'Negative';
-
-    return {
-      overall,
-      description: this.getWeatherImpactDescription(overall),
-      factors
-    };
-  }
-
-  getWeatherImpactDescription(impact) {
-    const descriptions = {
-      'Positive': 'Weather conditions are favorable for crop growth and development.',
-      'Neutral': 'Weather conditions are moderate. Monitor for changes.',
-      'Negative': 'Weather conditions may stress crops. Take protective measures.'
-    };
-    return descriptions[impact];
-  }
-
-  updateAIRecommendations(data) {
-    const container = document.getElementById('aiRecommendations');
-    if (!container || !this.hasAccess('predictions')) return;
-
-    const recommendations = this.generateAIRecommendations(data);
-    container.innerHTML = recommendations.map(rec => `
-      <div class="ai-recommendation">
-        <div class="ai-rec-header">
-          <span class="ai-rec-icon">${rec.icon}</span>
-          <strong>${rec.title}</strong>
-        </div>
-        <p>${rec.description}</p>
-        <div class="ai-rec-priority">Priority: ${rec.priority}</div>
-      </div>
-    `).join('');
-  }
-
-  generateAIRecommendations(data) {
-    const recommendations = [];
-
-    // AI-based recommendations using current data
-    if (data.cropHealth.score < 70) {
-      recommendations.push({
-        icon: '🤖',
-        title: 'Optimize Growing Conditions',
-        description: 'AI analysis suggests adjusting irrigation schedule and nutrient balance to improve crop health by 15-20%.',
-        priority: 'High'
-      });
-    }
-
-    if (data.soil.moisture < 35 && data.forecast?.some(day => day.rainfall > 5)) {
-      recommendations.push({
-        icon: '💧',
-        title: 'Smart Irrigation Timing',
-        description: 'Delay irrigation by 24-48 hours due to predicted rainfall. This can save 200-300L of water per hectare.',
-        priority: 'Medium'
-      });
-    }
-
-    if (data.yieldPrediction.confidence > 80) {
-      recommendations.push({
-        icon: '📈',
-        title: 'Yield Optimization',
-        description: 'Current conditions are optimal. Maintain existing practices to achieve predicted yield targets.',
-        priority: 'Low'
-      });
-    }
-
-    return recommendations;
-  }
-
-  exportData() {
-    if (!this.checkPremiumFeature('export')) {
-      return;
-    }
-
-    if (!this.data.current) {
-      this.showNotification('No data to export', 'warning');
-      return;
-    }
-
-    const exportData = {
-      timestamp: new Date().toISOString(),
-      weather: this.data.current.weather,
-      soil: this.data.current.soil,
-      cropHealth: this.data.current.cropHealth,
-      yieldPrediction: this.data.current.yieldPrediction,
-      forecast: this.data.current.forecast,
-      historical: this.data.current.historical
-    };
-
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(dataBlob);
-    link.download = `farm-data-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    this.showNotification('📥 Data exported successfully', 'success');
-    console.log('Data exported:', exportData);
-  }
-
-  refreshData() {
-    this.showNotification('Refreshing data...', 'info', 2000);
-    
-    if (this.socket && this.socket.connected) {
-      this.socket.emit('requestUpdate');
-      console.log('📡 Requested real-time update from server');
-    } else if (this.isServerMode) {
-      this.fetchInitialData();
-    } else {
-      this.loadDemoData();
-    }
-  }
-
-  loadSettings() {
-    const saved = localStorage.getItem('farmingDashboardSettings');
-    if (saved) {
-      this.settings = { ...this.settings, ...JSON.parse(saved) };
-    }
-  }
-
-  saveSettings() {
-    localStorage.setItem('farmingDashboardSettings', JSON.stringify(this.settings));
-  }
-
   showNotification(message, type = 'info', duration = 3000) {
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : type === 'warning' ? '#ff9800' : '#2196F3'};
+      color: white;
+      padding: 15px;
+      border-radius: 5px;
+      z-index: 9999;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    `;
     notification.innerHTML = `
-      <div class="notification-content">
-        <span class="notification-icon">${this.getNotificationIcon(type)}</span>
-        <span class="notification-message">${message}</span>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span>${this.getNotificationIcon(type)}</span>
+        <span>${message}</span>
       </div>
     `;
 
     document.body.appendChild(notification);
 
     setTimeout(() => {
-      notification.classList.add('show');
+      notification.style.opacity = '1';
     }, 100);
 
     setTimeout(() => {
-      notification.classList.remove('show');
+      notification.style.opacity = '0';
       setTimeout(() => {
         if (notification.parentNode) {
           notification.parentNode.removeChild(notification);
@@ -2134,9 +1658,16 @@ class SmartFarmingDashboard {
     };
     return icons[type] || 'ℹ️';
   }
+
+  loadSettings() {
+    const saved = localStorage.getItem('farmingDashboardSettings');
+    if (saved) {
+      this.settings = { ...this.settings, ...JSON.parse(saved) };
+    }
+  }
 }
 
-// Global Functions for Subscription
+// GLOBAL FUNCTIONS
 window.showUpgradeModal = function(suggestedPlan = 'pro') {
   if (window.dashboard) {
     window.dashboard.showUpgradeModal(suggestedPlan);
@@ -2162,55 +1693,13 @@ window.checkPremiumFeature = function(feature) {
   return false;
 };
 
-// Existing Global Functions
-window.quickIrrigate = function() {
-  if (window.dashboard) {
-    dashboard.showNotification('💧 Irrigation system activated!', 'success');
-  } else {
-    alert('Irrigation activated!');
-  }
-};
-
-window.viewAlerts = function() {
-  document.querySelector('[data-target="dashboard"]')?.click();
-};
-
-window.exportData = function() {
-  if (window.dashboard) {
-    if (window.dashboard.checkPremiumFeature('export')) {
-      window.dashboard.exportData();
-    }
-  } else {
-    alert('Data export feature - would export current dashboard data as JSON/CSV');
-  }
-};
-window.showUpgradeModal = function(suggestedPlan = 'pro') {
-  if (window.dashboard) {
-    window.dashboard.showUpgradeModal(suggestedPlan);
-  }
-};
-
-window.closeUpgradeModal = function() {
-  if (window.dashboard) {
-    window.dashboard.closeUpgradeModal();
-  }
-};
-
-// Replace the existing window.subscribeToPlan function with this:
-window.subscribeToPlan = function(plan) {
-  console.log('🔄 Global subscribeToPlan called with plan:', plan);
-  if (window.dashboard) {
-    window.dashboard.subscribeToPlan(plan);
-  } else {
-    console.error('❌ Dashboard not found!');
-  }
-};
-
-
 // Initialize Dashboard when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('🚀 Starting Complete Smart Farming Dashboard with Fixed Subscription Model...');
+  
   setTimeout(() => {
-    console.log('🚀 Initializing Smart Farming Dashboard with Subscription Features...');
+    console.log('📄 DOM loaded, initializing complete dashboard...');
     window.dashboard = new SmartFarmingDashboard();
+    console.log('✅ Complete Smart Farming Dashboard loaded successfully!');
   }, 500);
 });
