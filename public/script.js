@@ -1692,6 +1692,36 @@ window.checkPremiumFeature = function(feature) {
   }
   return false;
 };
+// Dark Mode Toggle - Add to your script.js
+function initDarkMode() {
+  // Create toggle button
+  const headerRight = document.querySelector('.header-right');
+  const toggle = document.createElement('button');
+  toggle.className = 'dark-mode-toggle';
+  toggle.innerHTML = '🌙';
+  toggle.title = 'Toggle Dark Mode';
+  
+  // Insert before refresh button
+  const refreshBtn = document.getElementById('refreshBtn');
+  headerRight.insertBefore(toggle, refreshBtn);
+  
+  // Check saved preference
+  if (localStorage.getItem('darkMode') === 'true') {
+    document.documentElement.classList.add('dark');
+    toggle.innerHTML = '☀️';
+  }
+  
+  // Toggle functionality
+  toggle.addEventListener('click', () => {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('darkMode', isDark);
+    toggle.innerHTML = isDark ? '☀️' : '🌙';
+  });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', initDarkMode);
+
 
 // Initialize Dashboard when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
