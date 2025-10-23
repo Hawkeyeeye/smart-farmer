@@ -153,9 +153,9 @@ class SmartFarmingDashboard {
           try {
             canvas.style.display = 'block';
             this.charts[canvasId] = new Chart(canvas.getContext('2d'), config);
-            console.log(`✅ Created chart: ${canvasId}`);
+            console.log(✅ Created chart: ${canvasId});
           } catch (error) {
-            console.error(`❌ Error creating ${canvasId}:`, error);
+            console.error(❌ Error creating ${canvasId}:, error);
           }
         }
       };
@@ -458,7 +458,7 @@ class SmartFarmingDashboard {
       }
     });
 
-    const currentCard = document.getElementById(`${this.currentPlan}PlanCard`);
+    const currentCard = document.getElementById(${this.currentPlan}PlanCard);
     if (currentCard) {
       currentCard.classList.add('current');
       const button = currentCard.querySelector('.plan-btn');
@@ -604,7 +604,7 @@ class SmartFarmingDashboard {
     const content = section.querySelector('.crop-health-content, .reports-content, .predictions-content');
     
     if (this.hasAccess(featureKey)) {
-      console.log(`✅ Granting access to ${sectionId}`);
+      console.log(✅ Granting access to ${sectionId});
       if (overlay) overlay.style.display = 'none';
       if (content) {
         content.style.display = 'block';
@@ -613,7 +613,7 @@ class SmartFarmingDashboard {
       }
       section.classList.remove('premium-section');
     } else {
-      console.log(`❌ Denying access to ${sectionId}`);
+      console.log(❌ Denying access to ${sectionId});
       if (overlay) overlay.style.display = 'flex';
       if (content) content.style.display = 'none';
       section.classList.add('premium-section');
@@ -760,7 +760,7 @@ class SmartFarmingDashboard {
           </div>
 
           <div class="weather-impact">
-            <h3>🌤️ Weather Impact Analysis</h3>
+            <h3>🌤 Weather Impact Analysis</h3>
             <div id="weatherImpact">
               <div class="impact-summary">
                 <h4>Overall Impact: Positive</h4>
@@ -789,7 +789,7 @@ class SmartFarmingDashboard {
     const overlay = section.querySelector('.premium-section-overlay');
     if (overlay && contentHTML) {
       overlay.insertAdjacentHTML('afterend', contentHTML);
-      console.log(`✅ Created content for ${sectionId}`);
+      console.log(✅ Created content for ${sectionId});
     }
   }
 
@@ -987,7 +987,7 @@ class SmartFarmingDashboard {
     const statusElement = document.getElementById('connectionStatus');
     if (statusElement) {
       statusElement.textContent = status === 'connected' ? 'Connected' : 'Disconnected';
-      statusElement.className = `connection-status ${status}`;
+      statusElement.className = connection-status ${status};
     }
   }
 
@@ -1190,8 +1190,8 @@ class SmartFarmingDashboard {
     if (data.soil) {
       ['nitrogen', 'phosphorus', 'potassium'].forEach(nutrient => {
         const value = data.soil[nutrient] || Math.random() * 40 + 40;
-        const fill = document.getElementById(`${nutrient}Fill`);
-        const valueEl = document.getElementById(`${nutrient}Value`);
+        const fill = document.getElementById(${nutrient}Fill);
+        const valueEl = document.getElementById(${nutrient}Value);
         
         if (fill) fill.style.width = value + '%';
         if (valueEl) valueEl.textContent = Math.round(value) + '%';
@@ -1310,9 +1310,9 @@ class SmartFarmingDashboard {
     
     if (data.weather?.temperature > 30) {
       recommendations.push({
-        icon: '🌡️',
+        icon: '🌡',
         title: 'Heat Stress Management',
-        description: `Temperature at ${Math.round(data.weather.temperature)}°C is high. Consider shade nets or increased irrigation frequency during peak hours.`,
+        description: Temperature at ${Math.round(data.weather.temperature)}°C is high. Consider shade nets or increased irrigation frequency during peak hours.,
         priority: 'High'
       });
     }
@@ -1321,7 +1321,7 @@ class SmartFarmingDashboard {
       recommendations.push({
         icon: '🌱',
         title: 'Maintain Excellence',
-        description: `Crop health is excellent at ${Math.round(data.cropHealth.score)}%. Continue current management practices.`,
+        description: Crop health is excellent at ${Math.round(data.cropHealth.score)}%. Continue current management practices.,
         priority: 'Low'
       });
     }
@@ -1330,7 +1330,7 @@ class SmartFarmingDashboard {
       recommendations.push({
         icon: '💧',
         title: 'Smart Irrigation',
-        description: `Soil moisture at ${data.soil.moisture.toFixed(1)}%. Monitor closely and irrigate within 24-48 hours.`,
+        description: Soil moisture at ${data.soil.moisture.toFixed(1)}%. Monitor closely and irrigate within 24-48 hours.,
         priority: 'Medium'
       });
     }
@@ -1338,7 +1338,7 @@ class SmartFarmingDashboard {
     recommendations.push({
       icon: '📈',
       title: 'Yield Optimization',
-      description: `Based on current conditions, predicted yield is ${data.yieldPrediction?.perHectare || 4200} kg/ha.`,
+      description: Based on current conditions, predicted yield is ${data.yieldPrediction?.perHectare || 4200} kg/ha.,
       priority: 'Low'
     });
     
@@ -1359,21 +1359,21 @@ class SmartFarmingDashboard {
 
   getWeatherIcon(description) {
     const icons = {
-      'clear sky': '☀️',
-      'few clouds': '🌤️',
+      'clear sky': '☀',
+      'few clouds': '🌤',
       'scattered clouds': '⛅',
-      'broken clouds': '☁️',
-      'overcast clouds': '☁️',
-      'light rain': '🌦️',
-      'moderate rain': '🌧️',
-      'heavy rain': '⛈️',
-      'thunderstorm': '⛈️',
-      'snow': '🌨️',
-      'mist': '🌫️',
-      'haze': '🌫️',
+      'broken clouds': '☁',
+      'overcast clouds': '☁',
+      'light rain': '🌦',
+      'moderate rain': '🌧',
+      'heavy rain': '⛈',
+      'thunderstorm': '⛈',
+      'snow': '🌨',
+      'mist': '🌫',
+      'haze': '🌫',
       'partly cloudy': '⛅'
     };
-    return icons[description] || '🌤️';
+    return icons[description] || '🌤';
   }
 
   // FIXED: Export Data Functionality
@@ -1457,7 +1457,7 @@ class SmartFarmingDashboard {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `farm-data-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = farm-data-${new Date().toISOString().split('T')[0]}.csv;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1560,7 +1560,7 @@ class SmartFarmingDashboard {
       dateStyle: 'medium',
       timeStyle: 'short'
     }));
-    this.updateElement('lastUpdate', `Last updated: ${now.toLocaleTimeString()}`);
+    this.updateElement('lastUpdate', Last updated: ${now.toLocaleTimeString()});
   }
 
   updateTrend(elementId, currentValue, referenceValue) {
@@ -1573,10 +1573,10 @@ class SmartFarmingDashboard {
       element.textContent = 'Stable';
       element.className = 'sensor-trend stable';
     } else if (diff > 0) {
-      element.textContent = `+${diff.toFixed(1)}`;
+      element.textContent = +${diff.toFixed(1)};
       element.className = 'sensor-trend up';
     } else {
-      element.textContent = `${diff.toFixed(1)}`;
+      element.textContent = ${diff.toFixed(1)};
       element.className = 'sensor-trend down';
     }
   }
@@ -1612,7 +1612,7 @@ class SmartFarmingDashboard {
 
   showNotification(message, type = 'info', duration = 3000) {
     const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
+    notification.className = notification ${type};
     notification.style.cssText = `
       position: fixed;
       top: 20px;
@@ -1653,10 +1653,10 @@ class SmartFarmingDashboard {
     const icons = {
       success: '✅',
       error: '❌',
-      warning: '⚠️',
-      info: 'ℹ️'
+      warning: '⚠',
+      info: 'ℹ'
     };
-    return icons[type] || 'ℹ️';
+    return icons[type] || 'ℹ';
   }
 
   loadSettings() {
@@ -1692,36 +1692,6 @@ window.checkPremiumFeature = function(feature) {
   }
   return false;
 };
-// Dark Mode Toggle - Add to your script.js
-function initDarkMode() {
-  // Create toggle button
-  const headerRight = document.querySelector('.header-right');
-  const toggle = document.createElement('button');
-  toggle.className = 'dark-mode-toggle';
-  toggle.innerHTML = '🌙';
-  toggle.title = 'Toggle Dark Mode';
-  
-  // Insert before refresh button
-  const refreshBtn = document.getElementById('refreshBtn');
-  headerRight.insertBefore(toggle, refreshBtn);
-  
-  // Check saved preference
-  if (localStorage.getItem('darkMode') === 'true') {
-    document.documentElement.classList.add('dark');
-    toggle.innerHTML = '☀️';
-  }
-  
-  // Toggle functionality
-  toggle.addEventListener('click', () => {
-    const isDark = document.documentElement.classList.toggle('dark');
-    localStorage.setItem('darkMode', isDark);
-    toggle.innerHTML = isDark ? '☀️' : '🌙';
-  });
-}
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', initDarkMode);
-
 
 // Initialize Dashboard when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
